@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Activity, DataManager, User } from '@/lib/carbonCalculator';
+
+// Use Singleton pattern for DataManager
+const dataManager = DataManager.getInstance();
 import Header from '@/components/Header';
 import CarbonGauge from '@/components/CarbonGauge';
 import ActivityLogger from '@/components/ActivityLogger';
@@ -16,8 +19,6 @@ const Index = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [showConfetti, setShowConfetti] = useState(false);
   const [user] = useState(new User('1', 'Guest User', 'guest@greentrace.ai', 100));
-  
-  const dataManager = new DataManager();
 
   // Load activities on mount
   useEffect(() => {
@@ -136,8 +137,11 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border py-8 mt-16">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            🌍 GreenTrace AI • Built for a sustainable future
+          <p className="text-sm text-muted-foreground mb-2">
+            🌍 GreenTrace • Built for a sustainable future
+          </p>
+          <p className="text-xs text-primary font-medium">
+            🇮🇳 Designed for the Green India Initiative
           </p>
         </div>
       </footer>
