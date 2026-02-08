@@ -33,6 +33,25 @@ const validatePositiveNumber = (value: number, fieldName: string): number => {
   return value;
 };
 
+// Validate number within a reasonable range to prevent overflow/DoS
+const validateRange = (value: number, fieldName: string, min: number, max: number): number => {
+  validatePositiveNumber(value, fieldName);
+  if (value > max) {
+    throw new ValidationError(`${fieldName} cannot exceed ${max}`);
+  }
+  if (value < min) {
+    throw new ValidationError(`${fieldName} must be at least ${min}`);
+  }
+  return value;
+};
+
+// Reasonable limits for different input types
+const INPUT_LIMITS = {
+  distance: { min: 0, max: 10000 },      // km - max 10,000 km per trip
+  usage: { min: 0, max: 10000 },          // kWh or m³ - max 10,000 units
+  servings: { min: 1, max: 100 },         // servings - max 100 per entry
+} as const;
+
 // ============= Abstract Base Class =============
 export abstract class Activity {
   constructor(
@@ -90,7 +109,7 @@ export class TransportActivity extends Activity {
     vehicleType: TransportVehicleType
   ) {
     super(id, name, date, 'transport');
-    this.distance = validatePositiveNumber(distance, 'Distance');
+    this.distance = validateRange(distance, 'Distance', INPUT_LIMITS.distance.min, INPUT_LIMITS.distance.max);
     this.vehicleType = vehicleType;
   }
 
@@ -156,7 +175,7 @@ export class DietActivity extends Activity {
   ) {
     super(id, name, date, 'diet');
     this.mealType = mealType;
-    this.servings = validatePositiveNumber(servings, 'Servings');
+    this.servings = validateRange(servings, 'Servings', INPUT_LIMITS.servings.min, INPUT_LIMITS.servings.max);
   }
 
   calculateImpact(): number {
@@ -214,7 +233,7 @@ export class UtilityActivity extends Activity {
   ) {
     super(id, name, date, 'utility');
     this.utilityType = utilityType;
-    this.usage = validatePositiveNumber(usage, 'Usage');
+    this.usage = validateRange(usage, 'Usage', INPUT_LIMITS.usage.min, INPUT_LIMITS.usage.max);
   }
 
   calculateImpact(): number {
@@ -374,15 +393,40 @@ export class DataManager {
     return DataManager.instance;
   }
 
+  private readonly MAX_ACTIVITIES = 1000;
+  private readonly MAX_STORAGE_SIZE = 4 * 1024 * 1024; // 4MB limit
+
   saveActivities(activities: Activity[]): void {
     try {
-      const data = activities.map(a => ({
+      // Limit number of stored activities to prevent unbounded growth
+      const limitedActivities = activities.slice(-this.MAX_ACTIVITIES);
+      
+      const data = limitedActivities.map(a => ({
         ...a,
         type: a.constructor.name,
       }));
-      localStorage.setItem(this.storageKey, JSON.stringify(data));
+      
+      const dataStr = JSON.stringify(data);
+      
+      // Check size before saving
+      if (dataStr.length > this.MAX_STORAGE_SIZE) {
+        throw new ValidationError('Storage limit reached. Older activities will be archived.');
+      }
+      
+      localStorage.setItem(this.storageKey, dataStr);
     } catch (error) {
-      console.error('Failed to save activities:', error);
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      // Handle QuotaExceededError specifically
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        throw new ValidationError('Storage quota exceeded. Please clear some old activities.');
+      }
+      // Generic error - don't expose details in production
+      if (import.meta.env.DEV) {
+        console.error('Failed to save activities:', error);
+      }
+      throw new ValidationError('Failed to save activities. Please try again.');
     }
   }
 
@@ -393,37 +437,45 @@ export class DataManager {
       
       const parsed = JSON.parse(data);
       return parsed.map((item: any) => {
-        switch (item.type) {
-          case 'TransportActivity':
-            return new TransportActivity(
-              item.id,
-              item.name,
-              new Date(item.date),
-              item.distance,
-              item.vehicleType
-            );
-          case 'DietActivity':
-            return new DietActivity(
-              item.id,
-              item.name,
-              new Date(item.date),
-              item.mealType,
-              item.servings
-            );
-          case 'UtilityActivity':
-            return new UtilityActivity(
-              item.id,
-              item.name,
-              new Date(item.date),
-              item.utilityType,
-              item.usage
-            );
-          default:
-            return null;
+        try {
+          switch (item.type) {
+            case 'TransportActivity':
+              return new TransportActivity(
+                item.id,
+                item.name,
+                new Date(item.date),
+                item.distance,
+                item.vehicleType
+              );
+            case 'DietActivity':
+              return new DietActivity(
+                item.id,
+                item.name,
+                new Date(item.date),
+                item.mealType,
+                item.servings
+              );
+            case 'UtilityActivity':
+              return new UtilityActivity(
+                item.id,
+                item.name,
+                new Date(item.date),
+                item.utilityType,
+                item.usage
+              );
+            default:
+              return null;
+          }
+        } catch {
+          // Skip invalid entries silently
+          return null;
         }
       }).filter(Boolean) as Activity[];
     } catch (error) {
-      console.error('Failed to load activities:', error);
+      // Don't expose internal details in production
+      if (import.meta.env.DEV) {
+        console.error('Failed to load activities:', error);
+      }
       return [];
     }
   }
@@ -432,7 +484,10 @@ export class DataManager {
     try {
       localStorage.removeItem(this.storageKey);
     } catch (error) {
-      console.error('Failed to clear activities:', error);
+      // Don't expose internal details in production
+      if (import.meta.env.DEV) {
+        console.error('Failed to clear activities:', error);
+      }
     }
   }
 }
