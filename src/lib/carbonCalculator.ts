@@ -1,163 +1,246 @@
 // Object-Oriented Carbon Calculator with TypeScript classes
+// Localized for India with industry-standard design patterns
 
-// Abstract base class for activities (OOP Inheritance)
+// ============= Types =============
+export type TransportVehicleType = 
+  | 'petrol' | 'diesel' | 'electric' | 'hybrid' 
+  | 'bus-ac' | 'bus-nonac' | 'train' | 'metro' 
+  | 'two-wheeler' | 'auto-rickshaw' | 'bicycle' | 'walking';
+
+export type MealType = 
+  | 'beef' | 'mutton' | 'chicken' | 'fish' 
+  | 'vegetarian' | 'vegetarian-dairy' | 'vegan';
+
+export type UtilityType = 'electricity' | 'gas' | 'water';
+
+export type ActivityCategory = 'transport' | 'diet' | 'utility';
+
+// ============= Error Handling =============
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+const validatePositiveNumber = (value: number, fieldName: string): number => {
+  if (typeof value !== 'number' || isNaN(value)) {
+    throw new ValidationError(`${fieldName} must be a valid number`);
+  }
+  if (value < 0) {
+    throw new ValidationError(`${fieldName} cannot be negative`);
+  }
+  return value;
+};
+
+// ============= Abstract Base Class =============
 export abstract class Activity {
   constructor(
-    public id: string,
-    public name: string,
-    public date: Date,
-    public category: 'transport' | 'diet' | 'utility'
+    public readonly id: string,
+    public readonly name: string,
+    public readonly date: Date,
+    public readonly category: ActivityCategory
   ) {}
 
-  // Abstract method - must be implemented by subclasses (Polymorphism)
   abstract calculateImpact(): number;
   abstract getIcon(): string;
   abstract getDescription(): string;
 }
 
-// Transport Activity subclass
+// ============= Transport Activity =============
 export class TransportActivity extends Activity {
-  constructor(
-    id: string,
-    name: string,
-    date: Date,
-    public distance: number, // in km
-    public vehicleType: 'petrol' | 'diesel' | 'electric' | 'hybrid' | 'bus' | 'train' | 'bicycle' | 'walking'
-  ) {
-    super(id, name, date, 'transport');
-  }
-
-  // Emission factors in kg CO2 per km
-  private emissionFactors: Record<string, number> = {
+  private static readonly emissionFactors: Record<TransportVehicleType, number> = {
     petrol: 0.21,
     diesel: 0.27,
     electric: 0.05,
     hybrid: 0.12,
-    bus: 0.089,
+    'bus-ac': 0.12,
+    'bus-nonac': 0.089,
     train: 0.041,
+    metro: 0.03,
+    'two-wheeler': 0.08,
+    'auto-rickshaw': 0.10,
     bicycle: 0,
     walking: 0,
   };
 
-  calculateImpact(): number {
-    return this.distance * (this.emissionFactors[this.vehicleType] || 0);
-  }
+  private static readonly icons: Record<TransportVehicleType, string> = {
+    petrol: '🚗',
+    diesel: '🚙',
+    electric: '⚡',
+    hybrid: '🔋',
+    'bus-ac': '🚌',
+    'bus-nonac': '🚌',
+    train: '🚆',
+    metro: '🚇',
+    'two-wheeler': '🛵',
+    'auto-rickshaw': '🛺',
+    bicycle: '🚲',
+    walking: '🚶',
+  };
 
-  getIcon(): string {
-    const icons: Record<string, string> = {
-      petrol: '🚗',
-      diesel: '🚙',
-      electric: '⚡',
-      hybrid: '🔋',
-      bus: '🚌',
-      train: '🚆',
-      bicycle: '🚲',
-      walking: '🚶',
-    };
-    return icons[this.vehicleType] || '🚗';
-  }
+  public readonly distance: number;
+  public readonly vehicleType: TransportVehicleType;
 
-  getDescription(): string {
-    return `${this.distance}km by ${this.vehicleType}`;
-  }
-}
-
-// Diet Activity subclass
-export class DietActivity extends Activity {
   constructor(
     id: string,
     name: string,
     date: Date,
-    public mealType: 'beef' | 'pork' | 'chicken' | 'fish' | 'vegetarian' | 'vegan',
-    public servings: number
+    distance: number,
+    vehicleType: TransportVehicleType
   ) {
-    super(id, name, date, 'diet');
+    super(id, name, date, 'transport');
+    this.distance = validatePositiveNumber(distance, 'Distance');
+    this.vehicleType = vehicleType;
   }
 
+  calculateImpact(): number {
+    return this.distance * (TransportActivity.emissionFactors[this.vehicleType] ?? 0);
+  }
+
+  getIcon(): string {
+    return TransportActivity.icons[this.vehicleType] ?? '🚗';
+  }
+
+  getDescription(): string {
+    const labels: Record<TransportVehicleType, string> = {
+      petrol: 'Petrol Car',
+      diesel: 'Diesel Car',
+      electric: 'Electric Car',
+      hybrid: 'Hybrid Car',
+      'bus-ac': 'AC Bus',
+      'bus-nonac': 'Non-AC Bus',
+      train: 'Train',
+      metro: 'Metro',
+      'two-wheeler': 'Two-Wheeler',
+      'auto-rickshaw': 'Auto-Rickshaw',
+      bicycle: 'Bicycle',
+      walking: 'Walking',
+    };
+    return `${this.distance}km by ${labels[this.vehicleType]}`;
+  }
+}
+
+// ============= Diet Activity =============
+export class DietActivity extends Activity {
   // Emission factors in kg CO2 per serving
-  private emissionFactors: Record<string, number> = {
+  private static readonly emissionFactors: Record<MealType, number> = {
     beef: 6.61,
-    pork: 2.4,
+    mutton: 5.5,
     chicken: 1.82,
     fish: 1.34,
     vegetarian: 0.86,
+    'vegetarian-dairy': 1.2,
     vegan: 0.43,
   };
 
-  calculateImpact(): number {
-    return this.servings * (this.emissionFactors[this.mealType] || 0);
-  }
+  private static readonly icons: Record<MealType, string> = {
+    beef: '🥩',
+    mutton: '🍖',
+    chicken: '🍗',
+    fish: '🐟',
+    vegetarian: '🥗',
+    'vegetarian-dairy': '🧀',
+    vegan: '🥬',
+  };
 
-  getIcon(): string {
-    const icons: Record<string, string> = {
-      beef: '🥩',
-      pork: '🥓',
-      chicken: '🍗',
-      fish: '🐟',
-      vegetarian: '🥗',
-      vegan: '🥬',
-    };
-    return icons[this.mealType] || '🍽️';
-  }
+  public readonly mealType: MealType;
+  public readonly servings: number;
 
-  getDescription(): string {
-    return `${this.servings} ${this.mealType} meal(s)`;
-  }
-}
-
-// Utility Activity subclass
-export class UtilityActivity extends Activity {
   constructor(
     id: string,
     name: string,
     date: Date,
-    public utilityType: 'electricity' | 'gas' | 'water',
-    public usage: number // kWh for electricity, m³ for gas/water
+    mealType: MealType,
+    servings: number
   ) {
-    super(id, name, date, 'utility');
+    super(id, name, date, 'diet');
+    this.mealType = mealType;
+    this.servings = validatePositiveNumber(servings, 'Servings');
   }
 
-  // Emission factors
-  private emissionFactors: Record<string, number> = {
-    electricity: 0.4, // kg CO2 per kWh
-    gas: 2.0, // kg CO2 per m³
-    water: 0.3, // kg CO2 per m³
-  };
-
   calculateImpact(): number {
-    return this.usage * (this.emissionFactors[this.utilityType] || 0);
+    return this.servings * (DietActivity.emissionFactors[this.mealType] ?? 0);
   }
 
   getIcon(): string {
-    const icons: Record<string, string> = {
-      electricity: '⚡',
-      gas: '🔥',
-      water: '💧',
-    };
-    return icons[this.utilityType] || '🏠';
+    return DietActivity.icons[this.mealType] ?? '🍽️';
   }
 
   getDescription(): string {
-    const units: Record<string, string> = {
-      electricity: 'kWh',
-      gas: 'm³',
-      water: 'm³',
+    const labels: Record<MealType, string> = {
+      beef: 'Beef',
+      mutton: 'Mutton',
+      chicken: 'Chicken',
+      fish: 'Fish',
+      vegetarian: 'Vegetarian',
+      'vegetarian-dairy': 'Vegetarian (Dairy)',
+      vegan: 'Vegan',
     };
-    return `${this.usage} ${units[this.utilityType]} of ${this.utilityType}`;
+    return `${this.servings} ${labels[this.mealType]} meal(s)`;
   }
 }
 
-// User class with encapsulation
-export class User {
-  private _greenGoal: number; // kg CO2 per month target
+// ============= Utility Activity =============
+export class UtilityActivity extends Activity {
+  // India-specific emission factors
+  private static readonly emissionFactors: Record<UtilityType, number> = {
+    electricity: 0.82, // India's carbon-heavy grid (kg CO2 per kWh)
+    gas: 2.0,          // kg CO2 per m³
+    water: 0.3,        // kg CO2 per m³
+  };
+
+  private static readonly icons: Record<UtilityType, string> = {
+    electricity: '⚡',
+    gas: '🔥',
+    water: '💧',
+  };
+
+  private static readonly units: Record<UtilityType, string> = {
+    electricity: 'kWh',
+    gas: 'm³',
+    water: 'm³',
+  };
+
+  public readonly utilityType: UtilityType;
+  public readonly usage: number;
 
   constructor(
-    public id: string,
-    public name: string,
-    public email: string,
+    id: string,
+    name: string,
+    date: Date,
+    utilityType: UtilityType,
+    usage: number
+  ) {
+    super(id, name, date, 'utility');
+    this.utilityType = utilityType;
+    this.usage = validatePositiveNumber(usage, 'Usage');
+  }
+
+  calculateImpact(): number {
+    return this.usage * (UtilityActivity.emissionFactors[this.utilityType] ?? 0);
+  }
+
+  getIcon(): string {
+    return UtilityActivity.icons[this.utilityType] ?? '🏠';
+  }
+
+  getDescription(): string {
+    return `${this.usage} ${UtilityActivity.units[this.utilityType]} of ${this.utilityType}`;
+  }
+}
+
+// ============= User Class (Encapsulation) =============
+export class User {
+  private _greenGoal: number;
+
+  constructor(
+    public readonly id: string,
+    public readonly name: string,
+    public readonly email: string,
     greenGoal: number = 100
   ) {
-    this._greenGoal = greenGoal;
+    this._greenGoal = validatePositiveNumber(greenGoal, 'Green Goal');
   }
 
   get greenGoal(): number {
@@ -165,9 +248,7 @@ export class User {
   }
 
   set greenGoal(value: number) {
-    if (value > 0) {
-      this._greenGoal = value;
-    }
+    this._greenGoal = validatePositiveNumber(value, 'Green Goal');
   }
 
   isGoalMet(currentEmissions: number): boolean {
@@ -179,64 +260,137 @@ export class User {
   }
 }
 
-// Eco Coach - provides tips based on highest emission category
+// ============= Eco Coach =============
 export class EcoCoach {
-  private tips: Record<string, string[]> = {
+  private readonly tips: Record<ActivityCategory, string[]> = {
     transport: [
       "Consider carpooling or using public transport to reduce your carbon footprint! 🚌",
       "Walking or cycling for short distances can significantly cut emissions. 🚲",
-      "If possible, switch to an electric or hybrid vehicle for your daily commute. ⚡",
+      "Try using the Metro for daily commute - it's one of the greenest options! 🚇",
+      "Two-wheelers are more fuel-efficient than cars for solo travel. 🛵",
       "Plan your trips efficiently to reduce unnecessary driving. 🗺️",
     ],
     diet: [
       "Try incorporating more plant-based meals into your diet! 🥗",
       "Reducing red meat consumption can significantly lower your carbon footprint. 🌱",
       "Consider meatless Mondays as a starting point for dietary changes. 🥬",
-      "Locally sourced food has a lower transportation carbon cost. 🏪",
+      "Locally sourced seasonal vegetables have a lower transportation carbon cost. 🏪",
+      "Traditional Indian vegetarian thalis are already quite eco-friendly! 🍛",
     ],
     utility: [
       "Switch to LED bulbs and energy-efficient appliances! 💡",
-      "Consider solar panels or green energy providers for your home. ☀️",
-      "Reduce water heating by taking shorter showers. 🚿",
+      "Consider solar panels - India has excellent solar potential. ☀️",
+      "Use a ceiling fan instead of AC when possible. 🌬️",
+      "Reduce water heating by using solar water heaters. 🚿",
       "Unplug devices when not in use to save energy. 🔌",
     ],
   };
 
-  getTip(highestCategory: 'transport' | 'diet' | 'utility'): string {
+  getTip(highestCategory: ActivityCategory): string {
     const categoryTips = this.tips[highestCategory];
     return categoryTips[Math.floor(Math.random() * categoryTips.length)];
   }
 
-  getHighestCategory(activities: Activity[]): 'transport' | 'diet' | 'utility' {
-    const totals = { transport: 0, diet: 0, utility: 0 };
+  getHighestCategory(activities: Activity[]): ActivityCategory {
+    const totals: Record<ActivityCategory, number> = { transport: 0, diet: 0, utility: 0 };
     
     activities.forEach(activity => {
       totals[activity.category] += activity.calculateImpact();
     });
 
-    return Object.entries(totals).reduce((a, b) => 
-      b[1] > a[1] ? b : a
-    )[0] as 'transport' | 'diet' | 'utility';
+    return (Object.entries(totals) as [ActivityCategory, number][])
+      .reduce((a, b) => (b[1] > a[1] ? b : a))[0];
   }
 }
 
-// Data Manager class for CRUD operations
+// ============= Activity Factory (Factory Pattern) =============
+export interface TransportActivityInput {
+  type: 'transport';
+  distance: number;
+  vehicleType: TransportVehicleType;
+}
+
+export interface DietActivityInput {
+  type: 'diet';
+  mealType: MealType;
+  servings: number;
+}
+
+export interface UtilityActivityInput {
+  type: 'utility';
+  utilityType: UtilityType;
+  usage: number;
+}
+
+export type ActivityInput = TransportActivityInput | DietActivityInput | UtilityActivityInput;
+
+export class ActivityFactory {
+  static create(input: ActivityInput): Activity {
+    const id = generateId();
+    const date = new Date();
+
+    switch (input.type) {
+      case 'transport':
+        return new TransportActivity(
+          id,
+          `${input.vehicleType} trip`,
+          date,
+          input.distance,
+          input.vehicleType
+        );
+      case 'diet':
+        return new DietActivity(
+          id,
+          `${input.mealType} meal`,
+          date,
+          input.mealType,
+          input.servings
+        );
+      case 'utility':
+        return new UtilityActivity(
+          id,
+          `${input.utilityType} usage`,
+          date,
+          input.utilityType,
+          input.usage
+        );
+      default:
+        throw new ValidationError('Invalid activity type');
+    }
+  }
+}
+
+// ============= Data Manager (Singleton Pattern) =============
 export class DataManager {
-  private storageKey = 'greentrace_data';
+  private static instance: DataManager | null = null;
+  private readonly storageKey = 'greentrace_data';
+
+  private constructor() {}
+
+  static getInstance(): DataManager {
+    if (!DataManager.instance) {
+      DataManager.instance = new DataManager();
+    }
+    return DataManager.instance;
+  }
 
   saveActivities(activities: Activity[]): void {
-    const data = activities.map(a => ({
-      ...a,
-      type: a.constructor.name,
-    }));
-    localStorage.setItem(this.storageKey, JSON.stringify(data));
+    try {
+      const data = activities.map(a => ({
+        ...a,
+        type: a.constructor.name,
+      }));
+      localStorage.setItem(this.storageKey, JSON.stringify(data));
+    } catch (error) {
+      console.error('Failed to save activities:', error);
+    }
   }
 
   loadActivities(): Activity[] {
-    const data = localStorage.getItem(this.storageKey);
-    if (!data) return [];
-    
     try {
+      const data = localStorage.getItem(this.storageKey);
+      if (!data) return [];
+      
       const parsed = JSON.parse(data);
       return parsed.map((item: any) => {
         switch (item.type) {
@@ -267,18 +421,33 @@ export class DataManager {
           default:
             return null;
         }
-      }).filter(Boolean);
-    } catch {
+      }).filter(Boolean) as Activity[];
+    } catch (error) {
+      console.error('Failed to load activities:', error);
       return [];
     }
   }
 
   clearActivities(): void {
-    localStorage.removeItem(this.storageKey);
+    try {
+      localStorage.removeItem(this.storageKey);
+    } catch (error) {
+      console.error('Failed to clear activities:', error);
+    }
   }
 }
 
-// Helper to generate unique IDs
+// ============= Utility Functions =============
 export const generateId = (): string => {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+
+// Currency formatter for INR
+export const formatINR = (amount: number): string => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
 };

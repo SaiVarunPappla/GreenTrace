@@ -1,41 +1,60 @@
 import { ExternalLink, Leaf, ShoppingBag } from 'lucide-react';
+import { formatINR } from '@/lib/carbonCalculator';
 
 const products = [
   {
     id: 1,
-    name: 'Bamboo Water Bottle',
-    description: 'Sustainable, reusable, and stylish',
-    price: '$24.99',
-    savings: 'Saves 167 plastic bottles/year',
+    name: 'Bamboo Toothbrush Set',
+    description: 'Pack of 4 eco-friendly brushes',
+    price: 199,
+    savings: 'Saves 4 plastic brushes/year',
     emoji: '🎋',
     tag: 'Best Seller',
   },
   {
     id: 2,
-    name: 'Solar Power Bank',
-    description: '10000mAh eco-friendly charging',
-    price: '$45.99',
-    savings: 'Reduces grid dependency',
-    emoji: '☀️',
-    tag: 'Popular',
-  },
-  {
-    id: 3,
-    name: 'Organic Cotton Tote',
-    description: 'Zero-waste shopping companion',
-    price: '$18.99',
+    name: 'Jute Shopping Bags',
+    description: 'Set of 3 reusable grocery bags',
+    price: 299,
     savings: 'Replaces 500+ plastic bags',
     emoji: '👜',
     tag: 'Eco Pick',
   },
   {
+    id: 3,
+    name: 'Solar Power Bank',
+    description: '10000mAh portable solar charger',
+    price: 1500,
+    savings: 'Reduces grid dependency',
+    emoji: '☀️',
+    tag: 'Popular',
+  },
+  {
     id: 4,
+    name: 'Copper Water Bottle',
+    description: 'Traditional & sustainable hydration',
+    price: 549,
+    savings: 'Saves 167 plastic bottles/year',
+    emoji: '🫙',
+    tag: 'Ayurvedic',
+  },
+  {
+    id: 5,
     name: 'LED Smart Bulb Set',
-    description: 'WiFi-enabled, energy efficient',
-    price: '$32.99',
+    description: '4-pack WiFi-enabled, energy efficient',
+    price: 899,
     savings: 'Cuts energy use by 85%',
     emoji: '💡',
     tag: 'Smart Home',
+  },
+  {
+    id: 6,
+    name: 'Organic Cotton Tote',
+    description: 'Handwoven by rural artisans',
+    price: 399,
+    savings: 'Supports local communities',
+    emoji: '🧺',
+    tag: 'Handmade',
   },
 ];
 
@@ -52,7 +71,7 @@ const Marketplace = () => {
               Eco Marketplace
             </h3>
             <p className="text-sm text-muted-foreground">
-              Products that reduce your footprint
+              Sustainable products for Green India
             </p>
           </div>
         </div>
@@ -86,7 +105,7 @@ const Marketplace = () => {
               </div>
               <div className="text-right">
                 <p className="font-display font-bold text-foreground">
-                  {product.price}
+                  {formatINR(product.price)}
                 </p>
                 <ExternalLink className="w-4 h-4 text-muted-foreground mt-2 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
@@ -96,7 +115,7 @@ const Marketplace = () => {
       </div>
 
       <p className="text-center text-xs text-muted-foreground mt-4">
-        Affiliate links • Purchases support eco initiatives
+        Affiliate links • Purchases support eco initiatives across India 🇮🇳
       </p>
     </div>
   );
