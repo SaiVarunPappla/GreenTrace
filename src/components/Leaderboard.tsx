@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { Trophy, Medal, Users, Crown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trophy, Medal, Users, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DepartmentScore {
