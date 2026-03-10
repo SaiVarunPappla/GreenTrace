@@ -62,24 +62,80 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
+      department_members: {
+        Row: {
+          department_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          department_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          department_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_members_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
         Row: {
           created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          auto_track_enabled: boolean | null
+          created_at: string
+          department: string | null
           display_name: string | null
+          employee_id: string | null
           green_goal: number
           id: string
           updated_at: string
         }
         Insert: {
+          auto_track_enabled?: boolean | null
           created_at?: string
+          department?: string | null
           display_name?: string | null
+          employee_id?: string | null
           green_goal?: number
           id: string
           updated_at?: string
         }
         Update: {
+          auto_track_enabled?: boolean | null
           created_at?: string
+          department?: string | null
           display_name?: string | null
+          employee_id?: string | null
           green_goal?: number
           id?: string
           updated_at?: string
