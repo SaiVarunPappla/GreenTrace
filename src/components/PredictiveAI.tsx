@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Activity } from '@/lib/carbonCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, TrendingUp, IndianRupee, Lightbulb, AlertTriangle, Loader2, Sparkles } from 'lucide-react';
+import { Brain, TrendingUp, IndianRupee, Lightbulb, Loader2, Sparkles } from 'lucide-react';
 import { formatINR } from '@/lib/carbonCalculator';
 import { toast } from 'sonner';
 

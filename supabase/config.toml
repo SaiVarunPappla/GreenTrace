@@ -1,1 +1,4 @@
 project_id = "umzokpwueichlbubfjyz"
+
+[functions.predict-emissions]
+verify_jwt = false

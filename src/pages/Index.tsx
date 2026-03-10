@@ -23,7 +23,7 @@ import ESGReport from '@/components/ESGReport';
 
 const Index = () => {
   const { user: authUser, loading: authLoading } = useAuth();
-  const { activities, loading: activitiesLoading, addActivity, deleteActivity } = useActivities();
+  const { activities, addActivity, deleteActivity } = useActivities();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showConfetti, setShowConfetti] = useState(false);
   const [appUser] = useState(new User('1', 'Guest User', 'guest@greentrace.ai', 100));

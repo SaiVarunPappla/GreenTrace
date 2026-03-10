@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Activity } from '@/lib/carbonCalculator';
 import { motion } from 'framer-motion';
-import { FileText, Download, Loader2, CheckCircle } from 'lucide-react';
+import { FileText, Download, Loader2 } from 'lucide-react';
 import { formatINR } from '@/lib/carbonCalculator';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';

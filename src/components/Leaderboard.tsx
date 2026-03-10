@@ -107,9 +107,9 @@ const Leaderboard = () => {
   };
 
   const getRankBorder = (index: number) => {
-    if (index === 0) return 'border-yellow-500/40';
-    if (index === 1) return 'border-gray-400/30';
-    if (index === 2) return 'border-amber-600/30';
+    if (index === 0) return 'border-eco-warning/40';
+    if (index === 1) return 'border-muted-foreground/30';
+    if (index === 2) return 'border-eco-earth/50';
     return 'border-border';
   };
 
