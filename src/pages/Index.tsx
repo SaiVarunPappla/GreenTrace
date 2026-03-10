@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivities } from '@/hooks/useActivities';
 import { User } from '@/lib/carbonCalculator';
+import { motion } from 'framer-motion';
 
 import Header from '@/components/Header';
 import CarbonGauge from '@/components/CarbonGauge';
@@ -14,6 +15,11 @@ import EmissionsChart from '@/components/EmissionsChart';
 import Marketplace from '@/components/Marketplace';
 import CarbonOffset from '@/components/CarbonOffset';
 import Confetti from '@/components/Confetti';
+import WasteRealization from '@/components/WasteRealization';
+import AutoTracker from '@/components/AutoTracker';
+import Leaderboard from '@/components/Leaderboard';
+import PredictiveAI from '@/components/PredictiveAI';
+import ESGReport from '@/components/ESGReport';
 
 const Index = () => {
   const { user: authUser, loading: authLoading } = useAuth();
@@ -44,7 +50,11 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-8">
         {activeTab === 'dashboard' && (
-          <div className="space-y-8 animate-fade-in-up">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+          >
             <div className="text-center mb-8">
               <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2">
                 Your <span className="eco-gradient-text">Green Dashboard</span>
@@ -72,11 +82,79 @@ const Index = () => {
             </div>
 
             <ActivityList activities={activities} onDelete={deleteActivity} />
-          </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'waste' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-4xl mx-auto"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+                <span className="eco-gradient-text">Waste Realization</span>
+              </h2>
+              <p className="text-muted-foreground">Your carbon inefficiency converted to Indian Rupees (₹)</p>
+            </div>
+            <WasteRealization activities={activities} />
+          </motion.div>
+        )}
+
+        {activeTab === 'autotrack' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-3xl mx-auto"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+                <span className="eco-gradient-text">Invisible Logger</span>
+              </h2>
+              <p className="text-muted-foreground">Automated commute & activity detection simulation</p>
+            </div>
+            <AutoTracker onAddActivity={addActivity} />
+          </motion.div>
+        )}
+
+        {activeTab === 'leaderboard' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-3xl mx-auto"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+                <span className="eco-gradient-text">Department Leaderboard</span>
+              </h2>
+              <p className="text-muted-foreground">Compete for the highest Green Score</p>
+            </div>
+            <Leaderboard />
+          </motion.div>
+        )}
+
+        {activeTab === 'predictions' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-3xl mx-auto"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+                <span className="eco-gradient-text">AI Predictions</span>
+              </h2>
+              <p className="text-muted-foreground">AI-powered emission forecasting & waste analysis</p>
+            </div>
+            <PredictiveAI activities={activities} />
+          </motion.div>
         )}
 
         {activeTab === 'marketplace' && (
-          <div className="max-w-4xl mx-auto animate-fade-in-up">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-4xl mx-auto"
+          >
             <div className="text-center mb-8">
               <h2 className="text-3xl font-display font-bold text-foreground mb-2">
                 <span className="eco-gradient-text">Eco Marketplace</span>
@@ -84,11 +162,15 @@ const Index = () => {
               <p className="text-muted-foreground">Sustainable products for a greener lifestyle</p>
             </div>
             <Marketplace />
-          </div>
+          </motion.div>
         )}
 
         {activeTab === 'offset' && (
-          <div className="max-w-2xl mx-auto animate-fade-in-up">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto"
+          >
             <div className="text-center mb-8">
               <h2 className="text-3xl font-display font-bold text-foreground mb-2">
                 <span className="eco-gradient-text">Carbon Offset</span>
@@ -96,13 +178,29 @@ const Index = () => {
               <p className="text-muted-foreground">Neutralize your impact through verified projects</p>
             </div>
             <CarbonOffset totalEmissions={totalEmissions} />
-          </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'report' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+                <span className="eco-gradient-text">ESG Report</span>
+              </h2>
+              <p className="text-muted-foreground">Generate professional sustainability reports for HR</p>
+            </div>
+            <ESGReport activities={activities} />
+          </motion.div>
         )}
       </main>
 
       <footer className="border-t border-border py-8 mt-16">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground mb-2">🌍 GreenTrace • Built for a sustainable future</p>
+          <p className="text-sm text-muted-foreground mb-2">🌍 GreenTrace India • Enterprise ESG & Carbon Intelligence</p>
           <p className="text-xs text-primary font-medium">🇮🇳 Designed for the Green India Initiative</p>
         </div>
       </footer>
