@@ -62,6 +62,67 @@ export type Database = {
         }
         Relationships: []
       }
+      department_challenges: {
+        Row: {
+          challenger_dept_id: string
+          created_at: string
+          defender_dept_id: string
+          description: string
+          goal_type: string
+          id: string
+          is_active: boolean | null
+          target_date: string
+          title: string
+          winner_dept_id: string | null
+        }
+        Insert: {
+          challenger_dept_id: string
+          created_at?: string
+          defender_dept_id: string
+          description: string
+          goal_type?: string
+          id?: string
+          is_active?: boolean | null
+          target_date: string
+          title: string
+          winner_dept_id?: string | null
+        }
+        Update: {
+          challenger_dept_id?: string
+          created_at?: string
+          defender_dept_id?: string
+          description?: string
+          goal_type?: string
+          id?: string
+          is_active?: boolean | null
+          target_date?: string
+          title?: string
+          winner_dept_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_challenges_challenger_dept_id_fkey"
+            columns: ["challenger_dept_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_challenges_defender_dept_id_fkey"
+            columns: ["defender_dept_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_challenges_winner_dept_id_fkey"
+            columns: ["winner_dept_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       department_members: {
         Row: {
           department_id: string
@@ -118,6 +179,7 @@ export type Database = {
           employee_id: string | null
           green_goal: number
           id: string
+          privacy_mode: boolean | null
           updated_at: string
         }
         Insert: {
@@ -128,6 +190,7 @@ export type Database = {
           employee_id?: string | null
           green_goal?: number
           id: string
+          privacy_mode?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -138,6 +201,7 @@ export type Database = {
           employee_id?: string | null
           green_goal?: number
           id?: string
+          privacy_mode?: boolean | null
           updated_at?: string
         }
         Relationships: []
