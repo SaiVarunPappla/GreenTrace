@@ -1,4 +1,4 @@
-import { Leaf, Menu, User, LogOut, LayoutDashboard, IndianRupee, Radio, Trophy, Brain, ShoppingBag, TreePine, FileText } from 'lucide-react';
+import { Leaf, Menu, User, LogOut, LayoutDashboard, IndianRupee, Radio, Trophy, Brain, ShoppingBag, TreePine, FileText, Zap, QrCode, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -17,9 +17,12 @@ const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
     { id: 'autotrack', label: 'AutoTrack', icon: Radio },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'predictions', label: 'AI Predict', icon: Brain },
+    { id: 'smartmeter', label: 'Grid', icon: Zap },
+    { id: 'qr', label: 'QR Check-in', icon: QrCode },
     { id: 'marketplace', label: 'Shop', icon: ShoppingBag },
     { id: 'offset', label: 'Offset', icon: TreePine },
     { id: 'report', label: 'ESG Report', icon: FileText },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'User';
