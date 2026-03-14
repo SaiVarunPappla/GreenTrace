@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Activity } from '@/lib/carbonCalculator';
 import { IndianRupee, TrendingUp, AlertTriangle, Fuel, Zap as ZapIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
