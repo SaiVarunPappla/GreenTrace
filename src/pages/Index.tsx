@@ -20,6 +20,12 @@ import AutoTracker from '@/components/AutoTracker';
 import Leaderboard from '@/components/Leaderboard';
 import PredictiveAI from '@/components/PredictiveAI';
 import ESGReport from '@/components/ESGReport';
+import CarbonHeatmap from '@/components/CarbonHeatmap';
+import SmartMeter from '@/components/SmartMeter';
+import CommuteQR from '@/components/CommuteQR';
+import AuroraBackground from '@/components/AuroraBackground';
+import DepartmentChallenge from '@/components/DepartmentChallenge';
+import PrivacyToggle from '@/components/PrivacyToggle';
 
 const Index = () => {
   const { user: authUser, loading: authLoading } = useAuth();
@@ -44,11 +50,12 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      <AuroraBackground totalEmissions={totalEmissions} />
       <Confetti isActive={showConfetti} onComplete={() => setShowConfetti(false)} />
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 relative z-10">
         {activeTab === 'dashboard' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -76,8 +83,9 @@ const Index = () => {
                 <ActivityLogger onAddActivity={addActivity} />
                 <EcoTip activities={activities} />
               </div>
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-1 space-y-6">
                 <EmissionsChart activities={activities} />
+                <CarbonHeatmap activities={activities} />
               </div>
             </div>
 
@@ -129,7 +137,10 @@ const Index = () => {
               </h2>
               <p className="text-muted-foreground">Compete for the highest Green Score</p>
             </div>
-            <Leaderboard />
+            <DepartmentChallenge />
+            <div className="mt-6">
+              <Leaderboard />
+            </div>
           </motion.div>
         )}
 
@@ -146,6 +157,38 @@ const Index = () => {
               <p className="text-muted-foreground">AI-powered emission forecasting & waste analysis</p>
             </div>
             <PredictiveAI activities={activities} />
+          </motion.div>
+        )}
+
+        {activeTab === 'smartmeter' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-3xl mx-auto"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+                <span className="eco-gradient-text">Smart Grid Monitor</span>
+              </h2>
+              <p className="text-muted-foreground">Real-time India grid carbon intensity simulation</p>
+            </div>
+            <SmartMeter />
+          </motion.div>
+        )}
+
+        {activeTab === 'qr' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+                <span className="eco-gradient-text">QR Check-in</span>
+              </h2>
+              <p className="text-muted-foreground">Generate commute QR codes for instant trip logging</p>
+            </div>
+            <CommuteQR />
           </motion.div>
         )}
 
@@ -196,9 +239,25 @@ const Index = () => {
             <ESGReport activities={activities} />
           </motion.div>
         )}
+
+        {activeTab === 'settings' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+                <span className="eco-gradient-text">Settings</span>
+              </h2>
+              <p className="text-muted-foreground">Configure privacy and preferences</p>
+            </div>
+            <PrivacyToggle />
+          </motion.div>
+        )}
       </main>
 
-      <footer className="border-t border-border py-8 mt-16">
+      <footer className="border-t border-border py-8 mt-16 relative z-10">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-muted-foreground mb-2">🌍 GreenTrace India • Enterprise ESG & Carbon Intelligence</p>
           <p className="text-xs text-primary font-medium">🇮🇳 Designed for the Green India Initiative</p>
