@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Activity } from '@/lib/carbonCalculator';
+import { Activity, formatINR } from '@/lib/carbonCalculator';
 import { motion } from 'framer-motion';
 import { FileText, Download, Loader2 } from 'lucide-react';
-import { formatINR } from '@/lib/carbonCalculator';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -14,21 +13,20 @@ interface ESGReportProps {
 
 const ESGReport = ({ activities }: ESGReportProps) => {
   const [generating, setGenerating] = useState(false);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const totalEmissions = activities.reduce((s, a) => s + a.calculateImpact(), 0);
   const transportTotal = activities.filter(a => a.category === 'transport').reduce((s, a) => s + a.calculateImpact(), 0);
   const dietTotal = activities.filter(a => a.category === 'diet').reduce((s, a) => s + a.calculateImpact(), 0);
   const utilityTotal = activities.filter(a => a.category === 'utility').reduce((s, a) => s + a.calculateImpact(), 0);
-  const offsetCost = Math.ceil((totalEmissions / 1000) * 1250);
 
-  // 2026 Indian cost rates
-  const fuelWaste = transportTotal * 12; // ₹12/kg CO2 from transport (petrol ~₹100/L)
-  const electricityWaste = utilityTotal * 9.76; // ₹8/kWh / 0.82 factor
+  const fuelWaste = transportTotal * 12;
+  const electricityWaste = utilityTotal * 9.76;
   const dietWaste = dietTotal * 5;
   const totalWaste = fuelWaste + electricityWaste + dietWaste;
+  const offsetCost = Math.ceil((totalEmissions / 1000) * 1250);
 
-  const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Employee';
+  const displayName = profile?.display_name || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Employee';
   const employeeEmail = user?.email || 'N/A';
 
   const generatePDF = async () => {
@@ -36,9 +34,7 @@ const ESGReport = ({ activities }: ESGReportProps) => {
       toast.error('No activities to report. Log some activities first.');
       return;
     }
-
     setGenerating(true);
-
     try {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -60,7 +56,7 @@ const ESGReport = ({ activities }: ESGReportProps) => {
         pageWidth - 14, 38, { align: 'right' }
       );
 
-      // Summary section
+      // Executive Summary
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
@@ -94,21 +90,80 @@ const ESGReport = ({ activities }: ESGReportProps) => {
         styles: { fontSize: 9, cellPadding: 4 },
         headStyles: { fillColor: [6, 78, 59], textColor: [255, 255, 255] },
         alternateRowStyles: { fillColor: [240, 253, 244] },
-        footStyles: { fillColor: [6, 78, 59], textColor: [255, 255, 255], fontStyle: 'bold' },
       });
 
-      // Indian cost rates reference
       const tableEndY = (doc as any).lastAutoTable?.finalY || 180;
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'italic');
-      doc.setTextColor(120, 120, 120);
-      doc.text('Rates: Petrol ~Rs.100/L | Diesel ~Rs.90/L | Electricity ~Rs.8/kWh | Grid: 0.82 kg CO2/kWh (2026 India)', 14, tableEndY + 8);
 
-      // Activities detail
-      doc.setFontSize(14);
+      // ==========================================
+      // C-Suite Summary Section
+      // ==========================================
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(6, 78, 59);
+      doc.text('C-Suite Strategic Summary', 14, tableEndY + 15);
+
+      // Risk Assessment
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Risk Assessment', 14, tableEndY + 26);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(60, 60, 60);
+
+      const annualProjection = totalEmissions * 12;
+      const budgetLimit = 2000; // kg CO2/year typical corporate budget per employee
+      const riskLevel = annualProjection > budgetLimit ? 'HIGH' : annualProjection > budgetLimit * 0.7 ? 'MEDIUM' : 'LOW';
+      const riskColor: [number, number, number] = riskLevel === 'HIGH' ? [220, 38, 38] : riskLevel === 'MEDIUM' ? [234, 179, 8] : [22, 163, 74];
+
+      doc.setTextColor(...riskColor);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Risk Level: ${riskLevel}`, 14, tableEndY + 34);
+      doc.setTextColor(60, 60, 60);
+      doc.setFont('helvetica', 'normal');
+
+      const riskLines = [
+        `- Projected annual emissions: ${annualProjection.toFixed(0)} kg CO2 (budget: ${budgetLimit} kg)`,
+        riskLevel === 'HIGH'
+          ? '- HIGH probability of exceeding carbon budget by Year-End'
+          : riskLevel === 'MEDIUM'
+            ? '- MODERATE risk — corrective action recommended this quarter'
+            : '- ON TRACK — maintain current green practices',
+        `- Projected annual financial waste: ${formatINR(totalWaste * 12)}`,
+      ];
+      riskLines.forEach((line, i) => {
+        doc.text(line, 14, tableEndY + 42 + i * 6);
+      });
+
+      // Actionable Roadmap
+      doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
-      doc.text('Recent Activities', 14, tableEndY + 20);
+      doc.text('Actionable Roadmap', 14, tableEndY + 66);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(60, 60, 60);
+
+      const evSavings = fuelWaste * 0.6 * 12;
+      const roadmapLines = [
+        `1. Switch 20% fleet to EVs → Save ${formatINR(evSavings)}/year in fuel costs`,
+        `2. Mandate metro/bus for <15km commutes → Reduce transport CO2 by 70%`,
+        `3. Solar rooftop installation → Offset ${(utilityTotal * 0.4 * 12).toFixed(0)} kg CO2/year`,
+        `4. Plant-based cafeteria days (2x/week) → Save ${formatINR(dietWaste * 0.3 * 12)}/year`,
+        `5. Smart meter integration → Real-time energy monitoring for 15% reduction`,
+      ];
+      roadmapLines.forEach((line, i) => {
+        doc.text(line, 14, tableEndY + 74 + i * 6);
+      });
+
+      // Activities detail on new page
+      doc.addPage();
+
+      doc.setFillColor(6, 78, 59);
+      doc.rect(0, 0, pageWidth, 25, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Recent Activities Detail', 14, 17);
 
       const activityRows = activities.slice(0, 25).map(a => [
         a.date.toLocaleDateString('en-IN'),
@@ -118,7 +173,7 @@ const ESGReport = ({ activities }: ESGReportProps) => {
       ]);
 
       autoTable(doc, {
-        startY: tableEndY + 25,
+        startY: 32,
         head: [['Date', 'Category', 'Description', 'Impact']],
         body: activityRows,
         styles: { fontSize: 8, cellPadding: 3 },
@@ -127,25 +182,23 @@ const ESGReport = ({ activities }: ESGReportProps) => {
       });
 
       // Recommendations
-      const activitiesEndY = (doc as any).lastAutoTable?.finalY || 220;
-      if (activitiesEndY < 250) {
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(6, 78, 59);
-        doc.text('Recommendations', 14, activitiesEndY + 15);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(60, 60, 60);
-        const recs = [
-          '- Switch daily commute to Metro/Bus to reduce transport emissions by up to 70%',
-          '- Use off-peak hours (before 9 AM, after 9 PM) for heavy appliance usage',
-          '- Incorporate 2+ plant-based meals per week to lower diet carbon footprint',
-          `- Potential annual savings: ${formatINR(totalWaste * 6)} by adopting green habits`,
-        ];
-        recs.forEach((r, i) => {
-          doc.text(r, 14, activitiesEndY + 25 + i * 7);
-        });
-      }
+      const activitiesEndY = (doc as any).lastAutoTable?.finalY || 100;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(6, 78, 59);
+      doc.text('Personalised Recommendations', 14, activitiesEndY + 15);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(60, 60, 60);
+      const recs = [
+        '- Switch daily commute to Metro/Bus to reduce transport emissions by up to 70%',
+        '- Use off-peak hours (before 9 AM, after 9 PM) for heavy appliance usage',
+        '- Incorporate 2+ plant-based meals per week to lower diet carbon footprint',
+        `- Potential annual savings: ${formatINR(totalWaste * 6)} by adopting green habits`,
+      ];
+      recs.forEach((r, i) => {
+        doc.text(r, 14, activitiesEndY + 25 + i * 7);
+      });
 
       // Footer on all pages
       const pages = doc.internal.pages.length - 1;
@@ -162,7 +215,7 @@ const ESGReport = ({ activities }: ESGReportProps) => {
       }
 
       doc.save(`GreenTrace_ESG_${displayName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
-      toast.success('ESG Report downloaded successfully! 📊');
+      toast.success('ESG Report with C-Suite Summary downloaded! 📊');
     } catch (err) {
       console.error(err);
       toast.error('Failed to generate report');
@@ -190,10 +243,9 @@ const ESGReport = ({ activities }: ESGReportProps) => {
           Report for: <span className="font-semibold text-foreground">{displayName}</span>
         </p>
         <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm">
-          Generate a professional PDF with your emission stats, financial waste analysis, and personalised recommendations.
+          Professional PDF with emission stats, C-Suite risk assessment, actionable roadmap, and personalised recommendations.
         </p>
 
-        {/* Preview stats */}
         <div className="grid grid-cols-4 gap-3 mb-6">
           <div className="rounded-xl bg-secondary/50 p-4">
             <p className="text-2xl font-display font-bold text-foreground">{activities.length}</p>

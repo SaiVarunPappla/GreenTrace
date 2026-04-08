@@ -26,12 +26,16 @@ import CommuteQR from '@/components/CommuteQR';
 import AuroraBackground from '@/components/AuroraBackground';
 import DepartmentChallenge from '@/components/DepartmentChallenge';
 import PrivacyToggle from '@/components/PrivacyToggle';
+import OrganizationView from '@/components/OrganizationView';
+import LiveActivityFeed from '@/components/LiveActivityFeed';
+import CentenaryBadge from '@/components/CentenaryBadge';
 
 const Index = () => {
   const { user: authUser, loading: authLoading } = useAuth();
   const { activities, addActivity, deleteActivity } = useActivities();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showConfetti, setShowConfetti] = useState(false);
+  const [viewMode, setViewMode] = useState<'my' | 'org'>('my');
   const { profile } = useAuth();
   const greenGoal = profile?.green_goal || 100;
   const [appUser] = useState(new User('1', 'Guest User', 'guest@greentrace.ai', greenGoal));
@@ -52,7 +56,7 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background relative pb-12">
       <AuroraBackground totalEmissions={totalEmissions} />
       <Confetti isActive={showConfetti} onComplete={() => setShowConfetti(false)} />
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -68,30 +72,58 @@ const Index = () => {
               <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2">
                 Your <span className="eco-gradient-text">Green Dashboard</span>
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground mb-3">
                 Track, reduce, and offset your carbon footprint
               </p>
+
+              {/* View Mode Toggle */}
+              <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-secondary/50 border border-border">
+                <button
+                  onClick={() => setViewMode('my')}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    viewMode === 'my'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  My View
+                </button>
+                <button
+                  onClick={() => setViewMode('org')}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    viewMode === 'org'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Organization View
+                </button>
+              </div>
             </div>
 
-            <StatsCards activities={activities} />
-
-            <div className="grid lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1">
-                <div className="eco-card flex items-center justify-center">
-                  <CarbonGauge value={totalEmissions} max={appUser.greenGoal} />
+            {viewMode === 'my' ? (
+              <>
+                <StatsCards activities={activities} />
+                <div className="grid lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-1">
+                    <div className="eco-card flex items-center justify-center">
+                      <CarbonGauge value={totalEmissions} max={appUser.greenGoal} />
+                    </div>
+                  </div>
+                  <div className="lg:col-span-1 space-y-6">
+                    <ActivityLogger onAddActivity={addActivity} />
+                    <EcoTip activities={activities} />
+                  </div>
+                  <div className="lg:col-span-1 space-y-6">
+                    <EmissionsChart activities={activities} />
+                    <CarbonHeatmap activities={activities} />
+                  </div>
                 </div>
-              </div>
-              <div className="lg:col-span-1 space-y-6">
-                <ActivityLogger onAddActivity={addActivity} />
-                <EcoTip activities={activities} />
-              </div>
-              <div className="lg:col-span-1 space-y-6">
-                <EmissionsChart activities={activities} />
-                <CarbonHeatmap activities={activities} />
-              </div>
-            </div>
-
-            <ActivityList activities={activities} onDelete={deleteActivity} />
+                <ActivityList activities={activities} onDelete={deleteActivity} />
+              </>
+            ) : (
+              <OrganizationView />
+            )}
           </motion.div>
         )}
 
@@ -259,12 +291,15 @@ const Index = () => {
         )}
       </main>
 
-      <footer className="border-t border-border py-8 mt-16 relative z-10">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground mb-2">🌍 GreenTrace India • Enterprise ESG & Carbon Intelligence</p>
+      <footer className="border-t border-border py-8 mt-16 relative z-10 mb-10">
+        <div className="container mx-auto px-4 text-center space-y-3">
+          <CentenaryBadge />
+          <p className="text-sm text-muted-foreground">🌍 GreenTrace India • Enterprise ESG & Carbon Intelligence</p>
           <p className="text-xs text-primary font-medium">🇮🇳 Designed for the Green India Initiative</p>
         </div>
       </footer>
+
+      <LiveActivityFeed />
     </div>
   );
 };
