@@ -20,12 +20,15 @@ const WasteRealization = ({ activities }: WasteRealizationProps) => {
     .reduce((s, a) => s + a.calculateImpact(), 0);
   const totalEmissions = transportTotal + utilityTotal + dietTotal;
 
-  // Convert CO2 to ₹ waste
-  const fuelWaste = transportTotal * 12; // ~₹12 per kg CO2 from transport
-  const electricityWaste = utilityTotal * 9.76; // ₹8/kWh ÷ 0.82 factor
-  const dietWaste = dietTotal * 5; // Estimated premium for high-emission diet choices
+  // 2026 Indian cost conversion rates
+  // Petrol: ~₹100/L, avg car: 12km/L → ~₹8.3/km → ~₹12/kg CO2 (0.21 factor)
+  // Electricity: ₹8/kWh, grid factor 0.82 → ₹9.76/kg CO2
+  // Diet premium: ~₹5/kg CO2 for high-emission diet
+  const fuelWaste = transportTotal * 12;
+  const electricityWaste = utilityTotal * 9.76;
+  const dietWaste = dietTotal * 5;
   const totalWaste = fuelWaste + electricityWaste + dietWaste;
-  const weeklyWaste = totalWaste * 0.25; // rough weekly estimate
+  const weeklyWaste = totalWaste * 0.25;
 
   const wasteCards = [
     {

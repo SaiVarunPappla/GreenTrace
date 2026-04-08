@@ -25,7 +25,9 @@ const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-  const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'User';
+  const { profile } = useAuth();
+  const displayName = profile?.display_name || user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'User';
+  const deptLabel = profile?.department || profile?.employee_id;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border"
@@ -71,7 +73,10 @@ const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
               <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
                 <User className="w-3 h-3 text-primary" />
               </div>
-              <span className="text-sm text-foreground max-w-[100px] truncate">{displayName}</span>
+              <div className="flex flex-col">
+                <span className="text-sm text-foreground max-w-[120px] truncate leading-tight">{displayName}</span>
+                {deptLabel && <span className="text-[10px] text-muted-foreground leading-tight">{deptLabel}</span>}
+              </div>
             </div>
             <button
               onClick={signOut}

@@ -1,24 +1,28 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { motion } from 'framer-motion';
-import { QrCode, Download, Copy, Check } from 'lucide-react';
+import { QrCode, Copy, Check, Scan } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActivities } from '@/hooks/useActivities';
+import { ActivityFactory } from '@/lib/carbonCalculator';
 import { toast } from 'sonner';
 
 type CommuteMode = 'company-bus' | 'metro' | 'carpool' | 'bicycle';
 
-const MODES: { value: CommuteMode; label: string; emoji: string; distance: number }[] = [
-  { value: 'company-bus', label: 'Company Bus', emoji: '🚌', distance: 15 },
-  { value: 'metro', label: 'Metro', emoji: '🚇', distance: 12 },
-  { value: 'carpool', label: 'Carpool', emoji: '🚗', distance: 18 },
-  { value: 'bicycle', label: 'Bicycle', emoji: '🚲', distance: 5 },
+const MODES: { value: CommuteMode; label: string; emoji: string; distance: number; vehicleType: string }[] = [
+  { value: 'company-bus', label: 'Company Bus', emoji: '🚌', distance: 15, vehicleType: 'bus-ac' },
+  { value: 'metro', label: 'Metro', emoji: '🚇', distance: 5, vehicleType: 'metro' },
+  { value: 'carpool', label: 'Carpool', emoji: '🚗', distance: 18, vehicleType: 'petrol' },
+  { value: 'bicycle', label: 'Bicycle', emoji: '🚲', distance: 5, vehicleType: 'bicycle' },
 ];
 
 const CommuteQR = () => {
   const { user } = useAuth();
-  const [mode, setMode] = useState<CommuteMode>('company-bus');
+  const { addActivity } = useActivities();
+  const [mode, setMode] = useState<CommuteMode>('metro');
   const [generated, setGenerated] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const selectedMode = MODES.find((m) => m.value === mode)!;
   const qrPayload = JSON.stringify({
@@ -26,6 +30,7 @@ const CommuteQR = () => {
     userId: user?.id?.slice(0, 8) || 'anon',
     mode,
     distance: selectedMode.distance,
+    vehicleType: selectedMode.vehicleType,
     timestamp: new Date().toISOString(),
   });
 
@@ -39,6 +44,27 @@ const CommuteQR = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast.success('Check-in data copied!');
+  };
+
+  // Simulate QR scan — instantly logs a trip
+  const handleScan = async () => {
+    setScanning(true);
+    try {
+      const activity = ActivityFactory.create({
+        type: 'transport',
+        distance: selectedMode.distance,
+        vehicleType: selectedMode.vehicleType as any,
+      });
+      await addActivity(activity);
+      toast.success(
+        `🎉 ${selectedMode.emoji} ${selectedMode.label} check-in scanned! ${selectedMode.distance} km trip logged instantly.`,
+        { duration: 5000 }
+      );
+    } catch (err) {
+      toast.error('Failed to log trip from QR scan.');
+    } finally {
+      setScanning(false);
+    }
   };
 
   return (
@@ -57,7 +83,7 @@ const CommuteQR = () => {
           </h3>
         </div>
         <p className="text-sm text-muted-foreground mb-4">
-          Generate a QR code to scan on company bus/metro for instant trip logging.
+          Generate a QR code, then click "Scan QR" to instantly log the trip to your dashboard.
         </p>
 
         <div className="grid grid-cols-2 gap-2 mb-6">
@@ -108,9 +134,17 @@ const CommuteQR = () => {
             {selectedMode.emoji} {selectedMode.label} Check-in
           </p>
           <p className="text-xs text-muted-foreground mb-4">
-            Scan at boarding point to auto-log {selectedMode.distance} km trip
+            Click "Scan QR" to auto-log {selectedMode.distance} km trip
           </p>
           <div className="flex gap-2">
+            <button
+              onClick={handleScan}
+              disabled={scanning}
+              className="eco-button px-5 py-2.5 flex items-center gap-2 disabled:opacity-50"
+            >
+              <Scan className="w-4 h-4" />
+              {scanning ? 'Logging...' : 'Scan QR'}
+            </button>
             <button
               onClick={handleCopy}
               className="px-4 py-2 rounded-xl bg-secondary text-foreground text-sm flex items-center gap-2 hover:bg-secondary/80 transition-colors"

@@ -233,3 +233,25 @@
   .delay-400 { animation-delay: 400ms; }
   .delay-500 { animation-delay: 500ms; }
 }
+
+/* Stage/Projector responsive view (1080p/4K) */
+@media (min-width: 1920px) {
+  html {
+    font-size: 18px;
+  }
+  .container {
+    max-width: 1600px;
+  }
+  .eco-card, .eco-stat-card {
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 2560px) {
+  html {
+    font-size: 22px;
+  }
+  .container {
+    max-width: 2200px;
+  }
+}
