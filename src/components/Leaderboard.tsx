@@ -22,6 +22,20 @@ const Leaderboard = () => {
 
   useEffect(() => {
     fetchLeaderboard();
+
+    // Subscribe to activities table changes for real-time leaderboard updates
+    const channel = supabase
+      .channel('leaderboard-activities')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'activities' },
+        () => {
+          fetchLeaderboard();
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const fetchLeaderboard = async () => {

@@ -32,7 +32,9 @@ const Index = () => {
   const { activities, addActivity, deleteActivity } = useActivities();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showConfetti, setShowConfetti] = useState(false);
-  const [appUser] = useState(new User('1', 'Guest User', 'guest@greentrace.ai', 100));
+  const { profile } = useAuth();
+  const greenGoal = profile?.green_goal || 100;
+  const [appUser] = useState(new User('1', 'Guest User', 'guest@greentrace.ai', greenGoal));
 
   if (authLoading) {
     return (
