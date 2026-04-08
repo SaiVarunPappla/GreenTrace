@@ -1,25 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Zap, TrendingUp, TrendingDown, Activity as ActivityIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface GridData {
-  carbonIntensity: number; // gCO₂/kWh
+  carbonIntensity: number;
   isPeak: boolean;
-  frequency: number; // Hz
-  load: number; // MW
+  frequency: number;
+  load: number; // GW
+  tariff: number; // ₹/kWh
 }
 
-const BASE_INTENSITY = 820; // India avg gCO₂/kWh
-const PEAK_HOURS = [9, 10, 11, 12, 13, 14, 18, 19, 20, 21]; // IST peak
+const BASE_INTENSITY = 820; // gCO₂/kWh India avg
+// IST peak hours
+const PEAK_HOURS = [9, 10, 11, 12, 13, 14, 18, 19, 20, 21];
+// Realistic India grid load range: 160-210 GW
+const BASE_LOAD_OFF_PEAK = 160;
+const BASE_LOAD_PEAK = 190;
+// 2026 Indian electricity tariffs (₹/kWh)
+const TARIFF_PEAK = 8.50;
+const TARIFF_OFF_PEAK = 5.20;
 
-const SmartMeter = () => {
+const SmartMeter = memo(() => {
   const [data, setData] = useState<GridData>({
     carbonIntensity: BASE_INTENSITY,
     isPeak: false,
     frequency: 50.0,
-    load: 180000,
+    load: 170,
+    tariff: TARIFF_OFF_PEAK,
   });
   const [history, setHistory] = useState<number[]>([]);
+  const [lastToastTime, setLastToastTime] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -29,17 +40,35 @@ const SmartMeter = () => {
       const fluctuation = (Math.random() - 0.5) * 60;
       const carbonIntensity = Math.round(baseIntensity + fluctuation);
 
-      const frequency = 50 + (Math.random() - 0.5) * 0.4;
-      const load = isPeak
-        ? 190000 + Math.random() * 20000
-        : 150000 + Math.random() * 30000;
+      // Realistic frequency: 49.5–50.5 Hz (Indian grid standard)
+      const frequency = 49.9 + (Math.random() - 0.3) * 0.6;
+      const clampedFreq = Math.max(49.5, Math.min(50.5, frequency));
 
-      setData({ carbonIntensity, isPeak, frequency, load });
+      // Realistic load in GW (160–210 GW range)
+      const baseLoad = isPeak ? BASE_LOAD_PEAK : BASE_LOAD_OFF_PEAK;
+      const loadFluctuation = (Math.random() - 0.5) * 20;
+      const load = Math.round(baseLoad + loadFluctuation);
+
+      const tariff = isPeak ? TARIFF_PEAK : TARIFF_OFF_PEAK;
+
+      setData({ carbonIntensity, isPeak, frequency: clampedFreq, load, tariff });
       setHistory((prev) => [...prev.slice(-19), carbonIntensity]);
+
+      // Smart toast notifications (max once per 30s)
+      const now = Date.now();
+      if (now - lastToastTime > 30000) {
+        if (!isPeak && carbonIntensity < BASE_INTENSITY * 0.85) {
+          toast.success('🟢 Low Carbon Grid detected — Best time to charge devices!', { duration: 4000 });
+          setLastToastTime(now);
+        } else if (isPeak && carbonIntensity > BASE_INTENSITY * 1.1) {
+          toast.warning('⚠️ High grid intensity — Delay heavy appliance usage if possible.', { duration: 4000 });
+          setLastToastTime(now);
+        }
+      }
     }, 2000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [lastToastTime]);
 
   const maxHist = Math.max(...history, 1);
   const minHist = Math.min(...history, 0);
@@ -69,7 +98,7 @@ const SmartMeter = () => {
                 Virtual Smart Meter
               </h3>
               <p className="text-xs text-muted-foreground">
-                Simulated India Grid Feed • Real-time
+                Simulated India Grid Feed • {data.load} GW Load
               </p>
             </div>
           </div>
@@ -87,11 +116,12 @@ const SmartMeter = () => {
             key={data.carbonIntensity}
             initial={{ scale: 1.1 }}
             animate={{ scale: 1 }}
+            transition={{ duration: 0.3 }}
             className="text-5xl font-display font-bold text-foreground"
           >
             {data.carbonIntensity}
           </motion.p>
-          <p className="text-sm text-muted-foreground mt-1">gCO₂/kWh</p>
+          <p className="text-sm text-muted-foreground mt-1">gCO2/kWh</p>
         </div>
 
         {/* Mini sparkline */}
@@ -102,6 +132,7 @@ const SmartMeter = () => {
                 key={i}
                 initial={{ height: 0 }}
                 animate={{ height: `${((val - minHist) / range) * 100}%` }}
+                transition={{ duration: 0.4 }}
                 className="flex-1 rounded-t-sm min-h-[2px]"
                 style={{
                   backgroundColor:
@@ -125,6 +156,7 @@ const SmartMeter = () => {
             {data.frequency.toFixed(2)} Hz
           </p>
           <p className="text-xs text-muted-foreground">Grid Frequency</p>
+          <p className="text-[10px] text-muted-foreground/70">Range: 49.5–50.5 Hz</p>
         </div>
         <div className="rounded-2xl border border-border p-4" style={{ background: 'var(--gradient-card)' }}>
           {data.isPeak ? (
@@ -133,16 +165,18 @@ const SmartMeter = () => {
             <TrendingDown className="w-4 h-4 text-primary mb-2" />
           )}
           <p className="text-lg font-display font-bold text-foreground">
-            {(data.load / 1000).toFixed(0)} GW
+            {data.load} GW
           </p>
           <p className="text-xs text-muted-foreground">Grid Load</p>
+          <p className="text-[10px] text-muted-foreground/70">India: 160–210 GW</p>
         </div>
         <div className="rounded-2xl border border-border p-4" style={{ background: 'var(--gradient-card)' }}>
           <Zap className="w-4 h-4 text-eco-warning mb-2" />
           <p className="text-lg font-display font-bold text-foreground">
-            ₹{data.isPeak ? '8.50' : '5.20'}
+            ₹{data.tariff.toFixed(2)}
           </p>
-          <p className="text-xs text-muted-foreground">Est. ₹/kWh</p>
+          <p className="text-xs text-muted-foreground">Tariff/kWh</p>
+          <p className="text-[10px] text-muted-foreground/70">2026 DISCOM rate</p>
         </div>
       </div>
 
@@ -157,12 +191,14 @@ const SmartMeter = () => {
       >
         <p className="text-sm text-foreground">
           {data.isPeak
-            ? '⚠️ Peak hours — carbon intensity is high. Delay heavy appliance usage if possible.'
-            : '✅ Off-peak hours — great time to run washing machines, charge EVs, and use heavy appliances.'}
+            ? '⚠️ Peak hours — carbon intensity is high. Delay heavy appliance usage if possible. Tariff: ₹8.50/kWh'
+            : '✅ Off-peak hours — great time to run washing machines, charge EVs, and use heavy appliances. Tariff: ₹5.20/kWh'}
         </p>
       </div>
     </motion.div>
   );
-};
+});
+
+SmartMeter.displayName = 'SmartMeter';
 
 export default SmartMeter;
