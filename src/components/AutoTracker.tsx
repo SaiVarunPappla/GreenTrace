@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Activity, ActivityFactory, TransportVehicleType } from '@/lib/carbonCalculator';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Clock, Zap, ToggleLeft, ToggleRight, Navigation, Satellite, Signal } from 'lucide-react';
+import { MapPin, Clock, Zap, ToggleLeft, ToggleRight, Navigation, Signal, AlertTriangle, Train } from 'lucide-react';
 import { toast } from 'sonner';
 import GPSMap from '@/components/GPSMap';
 
@@ -24,11 +24,14 @@ interface TripEvent {
   coords: { lat: number; lng: number };
 }
 
-// Geofence locations (configurable)
+// Geofence locations
 const GEOFENCES = {
   college: { lat: 17.4435, lng: 78.3772, radius: 0.3, label: 'VNRVJIET Campus' },
   home: { lat: 17.385, lng: 78.4867, radius: 0.2, label: 'Home Zone' },
 };
+
+// Personal Carbon Budget (kg CO₂ per day)
+const DAILY_CARBON_BUDGET = 8.0;
 
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -61,12 +64,18 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<{ lat: number; lng: number }[]>([]);
   const [insideGeofence, setInsideGeofence] = useState<string | null>(null);
+  const [currentSpeed, setCurrentSpeed] = useState<number | null>(null);
+  const [carbonBudgetUsed, setCarbonBudgetUsed] = useState(0);
+  const [highIntensityAlert, setHighIntensityAlert] = useState(false);
   const pointsRef = useRef<TrackedPoint[]>([]);
   const watchIdRef = useRef<number | null>(null);
   const lastLoggedDistRef = useRef(0);
+  const lastPushTimeRef = useRef(Date.now());
   const geofenceLoggedRef = useRef<Set<string>>(new Set());
 
-  const DISTANCE_THRESHOLD_KM = 0.5;
+  // Session buffer: push every 50m OR 60 seconds
+  const DISTANCE_BUFFER_KM = 0.05; // 50 meters
+  const TIME_BUFFER_MS = 60000; // 60 seconds
 
   const checkGeofences = useCallback(
     (lat: number, lng: number) => {
@@ -79,7 +88,6 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
             toast.success(`📍 Geofence: Entered ${fence.label}`, {
               description: 'Commute auto-logged!',
             });
-            // Auto-log a commute event
             const commuteDist = key === 'college' ? 5 : 2;
             try {
               const activity = ActivityFactory.create({
@@ -98,6 +106,43 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
     [vehicleType, onAddActivity]
   );
 
+  const logSegment = useCallback((distance: number) => {
+    if (distance < 0.05) return;
+    const roundedDist = Math.round(distance * 100) / 100;
+    try {
+      const activity = ActivityFactory.create({
+        type: 'transport',
+        distance: roundedDist,
+        vehicleType,
+      });
+      onAddActivity(activity);
+
+      // Update carbon budget
+      const impact = activity.calculateImpact();
+      setCarbonBudgetUsed(prev => prev + impact);
+
+      const event: TripEvent = {
+        id: `gps-${Date.now()}`,
+        label: `Live Segment (${vehicleType})`,
+        location: currentCoords
+          ? `${currentCoords.lat.toFixed(4)}°N, ${currentCoords.lng.toFixed(4)}°E`
+          : 'GPS',
+        distance: roundedDist,
+        time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        coords: currentCoords || { lat: 0, lng: 0 },
+      };
+      setEvents((prev) => [event, ...prev]);
+      toast.success(`📍 Auto-logged: ${roundedDist} km via ${vehicleType}`);
+    } catch { /* skip */ }
+  }, [vehicleType, onAddActivity, currentCoords]);
+
+  const switchToGreenMode = useCallback((mode: 'metro' | 'shared') => {
+    const newType: TransportVehicleType = mode === 'metro' ? 'metro' : 'bus-ac';
+    setVehicleType(newType);
+    setHighIntensityAlert(false);
+    toast.success(`✅ Switched to ${mode === 'metro' ? 'Metro' : 'Shared Ride'} mode — lower emissions!`);
+  }, []);
+
   const stopTracking = useCallback(() => {
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
@@ -107,25 +152,42 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
 
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by your browser.');
+      toast.error('Geolocation API unavailable on this device.');
       return;
     }
 
     pointsRef.current = [];
     lastLoggedDistRef.current = 0;
+    lastPushTimeRef.current = Date.now();
     geofenceLoggedRef.current = new Set();
     setTotalDistance(0);
     setBreadcrumbs([]);
+    setCarbonBudgetUsed(0);
 
-    toast('🛰️ Syncing with satellite…', { duration: 2000 });
+    toast('🛰️ Acquiring GPS signal…', { duration: 2000 });
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
+        const { latitude, longitude, accuracy, speed } = position.coords;
         const now = Date.now();
         setCurrentCoords({ lat: latitude, lng: longitude });
         setGpsAccuracy(accuracy);
         setBreadcrumbs((prev) => [...prev, { lat: latitude, lng: longitude }]);
+
+        // Speed detection (m/s to km/h)
+        const speedKmh = speed !== null && speed >= 0 ? speed * 3.6 : null;
+        setCurrentSpeed(speedKmh);
+
+        // High intensity alert: >20 km/h on a motorized vehicle
+        if (speedKmh && speedKmh > 20 && !['metro', 'bus-ac', 'bus-nonac', 'bicycle', 'walking'].includes(vehicleType)) {
+          setHighIntensityAlert(true);
+          toast.warning('⚠️ High Intensity Detected — Carbon budget depleting fast!', {
+            id: 'high-intensity',
+            duration: 5000,
+          });
+        } else {
+          setHighIntensityAlert(false);
+        }
 
         if (accuracy < 30) {
           toast('📡 GPS Signal: High Accuracy', { id: 'gps-signal', duration: 1500 });
@@ -137,39 +199,21 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
         if (points.length > 0) {
           const last = points[points.length - 1];
           const segmentDist = haversineDistance(last.lat, last.lng, latitude, longitude);
-          if (segmentDist < 0.01) return;
+          if (segmentDist < 0.005) return; // noise filter: <5m
 
           const newTotal = totalDistanceFromPoints([...points, { lat: latitude, lng: longitude, timestamp: now }]);
           setTotalDistance(newTotal);
 
-          toast(`🛰️ Commute Distance Updating: ${newTotal.toFixed(1)}km`, {
-            id: 'distance-update',
-            duration: 1500,
-          });
-
+          // Session buffer: push to DB every 50m OR every 60s
           const distSinceLastLog = newTotal - lastLoggedDistRef.current;
-          if (distSinceLastLog >= DISTANCE_THRESHOLD_KM) {
-            const roundedDist = Math.round(distSinceLastLog * 10) / 10;
-            try {
-              const activity = ActivityFactory.create({
-                type: 'transport',
-                distance: roundedDist,
-                vehicleType,
-              });
-              onAddActivity(activity);
+          const timeSinceLastPush = now - lastPushTimeRef.current;
 
-              const event: TripEvent = {
-                id: `gps-${now}`,
-                label: `Live Trip Segment (${vehicleType})`,
-                location: `${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E`,
-                distance: roundedDist,
-                time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-                coords: { lat: latitude, lng: longitude },
-              };
-              setEvents((prev) => [event, ...prev]);
+          if (distSinceLastLog >= DISTANCE_BUFFER_KM || timeSinceLastPush >= TIME_BUFFER_MS) {
+            if (distSinceLastLog >= 0.05) {
+              logSegment(distSinceLastLog);
               lastLoggedDistRef.current = newTotal;
-              toast.success(`📍 Auto-logged: ${roundedDist} km via ${vehicleType}`);
-            } catch { /* skip */ }
+              lastPushTimeRef.current = now;
+            }
           }
         }
 
@@ -181,21 +225,21 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
             toast.error('Location permission denied. Please allow location access.');
             break;
           case error.POSITION_UNAVAILABLE:
-            toast.error('Location information unavailable.');
+            toast.error('Waiting for real-world GPS data…');
             break;
           case error.TIMEOUT:
-            toast.error('Location request timed out.');
+            toast.error('GPS signal timeout — move to an open area.');
             break;
         }
         setEnabled(false);
       },
       {
         enableHighAccuracy: true,
-        maximumAge: 5000,
+        maximumAge: 3000,
         timeout: 15000,
       }
     );
-  }, [vehicleType, onAddActivity, checkGeofences]);
+  }, [vehicleType, checkGeofences, logSegment]);
 
   useEffect(() => {
     if (enabled) startTracking();
@@ -206,13 +250,8 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
   const handleToggle = () => {
     if (enabled) {
       const remaining = totalDistance - lastLoggedDistRef.current;
-      if (remaining >= 0.1) {
-        const roundedDist = Math.round(remaining * 10) / 10;
-        try {
-          const activity = ActivityFactory.create({ type: 'transport', distance: roundedDist, vehicleType });
-          onAddActivity(activity);
-          toast.success(`📍 Final segment logged: ${roundedDist} km`);
-        } catch { /* skip */ }
+      if (remaining >= 0.05) {
+        logSegment(remaining);
       }
       toast.info(`🛑 Tracking stopped. Total: ${totalDistance.toFixed(2)} km`);
     }
@@ -223,6 +262,8 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
       setBreadcrumbs([]);
       setGpsAccuracy(null);
       setInsideGeofence(null);
+      setCurrentSpeed(null);
+      setHighIntensityAlert(false);
     }
   };
 
@@ -235,6 +276,8 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
     { value: 'bicycle', label: 'Bicycle', emoji: '🚲' },
     { value: 'walking', label: 'Walking', emoji: '🚶' },
   ];
+
+  const budgetPercent = Math.min((carbonBudgetUsed / DAILY_CARBON_BUDGET) * 100, 100);
 
   return (
     <div className="space-y-6">
@@ -257,8 +300,8 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
               <h3 className="text-lg font-display font-semibold text-foreground">
                 Live GPS Engine
               </h3>
-              <p className="text-sm text-muted-foreground">
-                Real-time Haversine tracking with geofencing
+              <p className="text-xs text-muted-foreground">
+                Real-time Haversine • 50m buffer • Geofencing
               </p>
             </div>
           </div>
@@ -294,7 +337,7 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
 
         {enabled && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2 text-sm text-primary">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 GPS Active
@@ -302,16 +345,76 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
               {gpsAccuracy !== null && (
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Signal className="w-3 h-3" />
-                  ±{Math.round(gpsAccuracy)}m accuracy
+                  ±{Math.round(gpsAccuracy)}m
+                </div>
+              )}
+              {currentSpeed !== null && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  🏎️ {currentSpeed.toFixed(1)} km/h
                 </div>
               )}
               {insideGeofence && (
                 <div className="flex items-center gap-1 text-xs text-primary">
-                  <Satellite className="w-3 h-3" />
-                  Inside: {insideGeofence}
+                  📍 {insideGeofence}
                 </div>
               )}
             </div>
+
+            {/* Carbon Budget Bar */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Daily Carbon Budget</span>
+                <span className={budgetPercent > 80 ? 'text-destructive font-semibold' : 'text-foreground'}>
+                  {carbonBudgetUsed.toFixed(2)} / {DAILY_CARBON_BUDGET} kg CO₂
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full"
+                  animate={{ width: `${budgetPercent}%` }}
+                  style={{
+                    background: budgetPercent > 80
+                      ? 'hsl(0 60% 50%)'
+                      : budgetPercent > 50
+                      ? 'hsl(var(--eco-warning))'
+                      : 'hsl(var(--primary))',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* High intensity alert with quick actions */}
+            <AnimatePresence>
+              {highIntensityAlert && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="rounded-xl border border-destructive/30 p-3 space-y-2"
+                  style={{ background: 'linear-gradient(145deg, hsl(0 40% 12% / 0.6), hsl(var(--card)))' }}
+                >
+                  <div className="flex items-center gap-2 text-sm text-destructive font-semibold">
+                    <AlertTriangle className="w-4 h-4" />
+                    High Intensity Detected — Budget depleting fast
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => switchToGreenMode('metro')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/20 border border-primary/40 text-xs text-foreground hover:bg-primary/30 transition-all"
+                    >
+                      <Train className="w-3 h-3" /> Switch to Metro
+                    </button>
+                    <button
+                      onClick={() => switchToGreenMode('shared')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/20 border border-primary/40 text-xs text-foreground hover:bg-primary/30 transition-all"
+                    >
+                      🚌 Log Shared Ride
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-secondary/50 p-3">
                 <p className="text-xs text-muted-foreground">Distance</p>
@@ -324,7 +427,7 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
                 <p className="text-sm font-mono text-foreground">
                   {currentCoords
                     ? `${currentCoords.lat.toFixed(4)}°N, ${currentCoords.lng.toFixed(4)}°E`
-                    : 'Acquiring...'}
+                    : 'Acquiring…'}
                 </p>
               </div>
             </div>
@@ -332,10 +435,15 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
         )}
 
         {!enabled && !events.length && (
-          <p className="text-sm text-muted-foreground">
-            Enable to track your real-time location via GPS. Distance is calculated using the Haversine formula.
-            Geofences auto-detect campus arrival. Activities auto-log every 500m.
-          </p>
+          <div className="text-center py-4">
+            <p className="text-sm text-muted-foreground mb-1">
+              Waiting for real-world GPS data
+            </p>
+            <p className="text-xs text-muted-foreground/70">
+              Enable tracking to start live distance calculation via Haversine formula.
+              Activities auto-push every 50m or 60s.
+            </p>
+          </div>
         )}
       </motion.div>
 

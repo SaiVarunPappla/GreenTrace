@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Medal, Users, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -19,18 +19,20 @@ const Leaderboard = () => {
   const [userDept, setUserDept] = useState<string | null>(null);
   const [availableDepts, setAvailableDepts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rankShift, setRankShift] = useState(false);
 
   useEffect(() => {
     fetchLeaderboard();
 
-    // Subscribe to activities table changes for real-time leaderboard updates
     const channel = supabase
       .channel('leaderboard-activities')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'activities' },
         () => {
+          setRankShift(true);
           fetchLeaderboard();
+          setTimeout(() => setRankShift(false), 2000);
         }
       )
       .subscribe();
@@ -40,11 +42,9 @@ const Leaderboard = () => {
 
   const fetchLeaderboard = async () => {
     try {
-      // Fetch departments
       const { data: depts } = await supabase.from('departments').select('*');
       setAvailableDepts(depts || []);
 
-      // Fetch user's membership
       if (user) {
         const { data: membership } = await supabase
           .from('department_members')
@@ -54,7 +54,6 @@ const Leaderboard = () => {
         setUserDept(membership?.department_id || null);
       }
 
-      // Fetch members with activities for scoring
       const { data: members } = await supabase
         .from('department_members')
         .select('department_id, user_id');
@@ -63,14 +62,12 @@ const Leaderboard = () => {
         .from('activities')
         .select('user_id, impact');
 
-      // Calculate department scores
       const deptScores: DepartmentScore[] = (depts || []).map(dept => {
         const deptMembers = (members || []).filter(m => m.department_id === dept.id);
         const memberIds = deptMembers.map(m => m.user_id);
         const deptActivities = (activities || []).filter(a => memberIds.includes(a.user_id));
         const totalEmissions = deptActivities.reduce((sum, a) => sum + (Number(a.impact) || 0), 0);
         const memberCount = deptMembers.length;
-        // Green Score: lower emissions per member = higher score
         const avgEmissions = memberCount > 0 ? totalEmissions / memberCount : 0;
         const greenScore = Math.max(0, Math.round(1000 - avgEmissions * 10));
 
@@ -93,17 +90,13 @@ const Leaderboard = () => {
 
   const joinDepartment = async (deptId: string) => {
     if (!user) return;
-
-    // Leave existing department first
     if (userDept) {
       await supabase.from('department_members').delete().eq('user_id', user.id);
     }
-
     const { error } = await supabase.from('department_members').insert({
       user_id: user.id,
       department_id: deptId,
     });
-
     if (error) {
       toast.error('Failed to join department');
     } else {
@@ -139,6 +132,23 @@ const Leaderboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Rank shift indicator */}
+      <AnimatePresence>
+        {rankShift && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-center py-2"
+          >
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-xs text-primary font-semibold">
+              <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+              Rankings updating…
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Join department prompt */}
       {!userDept && (
         <motion.div
@@ -176,6 +186,7 @@ const Leaderboard = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
+            layout
             className={`relative rounded-2xl border ${getRankBorder(index)} p-5 overflow-hidden transition-all ${
               dept.id === userDept ? 'ring-2 ring-primary/50' : ''
             }`}
