@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Activity, ActivityFactory, TransportVehicleType } from '@/lib/carbonCalculator';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Clock, Zap, ToggleLeft, ToggleRight, Radio, Navigation } from 'lucide-react';
+import { MapPin, Clock, Zap, ToggleLeft, ToggleRight, Navigation, Satellite, Signal } from 'lucide-react';
 import { toast } from 'sonner';
+import GPSMap from '@/components/GPSMap';
 
 interface AutoTrackerProps {
   onAddActivity: (activity: Activity) => void;
@@ -23,12 +24,14 @@ interface TripEvent {
   coords: { lat: number; lng: number };
 }
 
-// Haversine formula for accurate distance between two GPS coordinates
-function haversineDistance(
-  lat1: number, lon1: number,
-  lat2: number, lon2: number
-): number {
-  const R = 6371; // Earth's radius in km
+// Geofence locations (configurable)
+const GEOFENCES = {
+  college: { lat: 17.4435, lng: 78.3772, radius: 0.3, label: 'VNRVJIET Campus' },
+  home: { lat: 17.385, lng: 78.4867, radius: 0.2, label: 'Home Zone' },
+};
+
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -41,17 +44,59 @@ function haversineDistance(
   return R * c;
 }
 
+function totalDistanceFromPoints(points: TrackedPoint[]): number {
+  let dist = 0;
+  for (let i = 1; i < points.length; i++) {
+    dist += haversineDistance(points[i - 1].lat, points[i - 1].lng, points[i].lat, points[i].lng);
+  }
+  return dist;
+}
+
 const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
   const [enabled, setEnabled] = useState(false);
   const [events, setEvents] = useState<TripEvent[]>([]);
   const [totalDistance, setTotalDistance] = useState(0);
   const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [vehicleType, setVehicleType] = useState<TransportVehicleType>('two-wheeler');
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [breadcrumbs, setBreadcrumbs] = useState<{ lat: number; lng: number }[]>([]);
+  const [insideGeofence, setInsideGeofence] = useState<string | null>(null);
   const pointsRef = useRef<TrackedPoint[]>([]);
   const watchIdRef = useRef<number | null>(null);
   const lastLoggedDistRef = useRef(0);
+  const geofenceLoggedRef = useRef<Set<string>>(new Set());
 
-  const DISTANCE_THRESHOLD_KM = 0.5; // Log every 500m
+  const DISTANCE_THRESHOLD_KM = 0.5;
+
+  const checkGeofences = useCallback(
+    (lat: number, lng: number) => {
+      for (const [key, fence] of Object.entries(GEOFENCES)) {
+        const dist = haversineDistance(lat, lng, fence.lat, fence.lng);
+        if (dist <= fence.radius) {
+          if (!geofenceLoggedRef.current.has(key)) {
+            geofenceLoggedRef.current.add(key);
+            setInsideGeofence(fence.label);
+            toast.success(`📍 Geofence: Entered ${fence.label}`, {
+              description: 'Commute auto-logged!',
+            });
+            // Auto-log a commute event
+            const commuteDist = key === 'college' ? 5 : 2;
+            try {
+              const activity = ActivityFactory.create({
+                type: 'transport',
+                distance: commuteDist,
+                vehicleType,
+              });
+              onAddActivity(activity);
+            } catch { /* skip */ }
+          }
+          return;
+        }
+      }
+      setInsideGeofence(null);
+    },
+    [vehicleType, onAddActivity]
+  );
 
   const stopTracking = useCallback(() => {
     if (watchIdRef.current !== null) {
@@ -68,28 +113,40 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
 
     pointsRef.current = [];
     lastLoggedDistRef.current = 0;
+    geofenceLoggedRef.current = new Set();
     setTotalDistance(0);
+    setBreadcrumbs([]);
 
-    toast.success('📍 GPS Tracking enabled — move around to log your trip!');
+    toast('🛰️ Syncing with satellite…', { duration: 2000 });
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
-        const { latitude, longitude } = position.coords;
+        const { latitude, longitude, accuracy } = position.coords;
         const now = Date.now();
         setCurrentCoords({ lat: latitude, lng: longitude });
+        setGpsAccuracy(accuracy);
+        setBreadcrumbs((prev) => [...prev, { lat: latitude, lng: longitude }]);
+
+        if (accuracy < 30) {
+          toast('📡 GPS Signal: High Accuracy', { id: 'gps-signal', duration: 1500 });
+        }
+
+        checkGeofences(latitude, longitude);
 
         const points = pointsRef.current;
         if (points.length > 0) {
           const last = points[points.length - 1];
           const segmentDist = haversineDistance(last.lat, last.lng, latitude, longitude);
-
-          // Ignore GPS jitter (< 10m movements)
           if (segmentDist < 0.01) return;
 
           const newTotal = totalDistanceFromPoints([...points, { lat: latitude, lng: longitude, timestamp: now }]);
           setTotalDistance(newTotal);
 
-          // Auto-log activity every DISTANCE_THRESHOLD_KM
+          toast(`🛰️ Commute Distance Updating: ${newTotal.toFixed(1)}km`, {
+            id: 'distance-update',
+            duration: 1500,
+          });
+
           const distSinceLastLog = newTotal - lastLoggedDistRef.current;
           if (distSinceLastLog >= DISTANCE_THRESHOLD_KM) {
             const roundedDist = Math.round(distSinceLastLog * 10) / 10;
@@ -112,9 +169,7 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
               setEvents((prev) => [event, ...prev]);
               lastLoggedDistRef.current = newTotal;
               toast.success(`📍 Auto-logged: ${roundedDist} km via ${vehicleType}`);
-            } catch {
-              // skip invalid
-            }
+            } catch { /* skip */ }
           }
         }
 
@@ -140,40 +195,21 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
         timeout: 15000,
       }
     );
-  }, [vehicleType, onAddActivity]);
-
-  function totalDistanceFromPoints(points: TrackedPoint[]): number {
-    let dist = 0;
-    for (let i = 1; i < points.length; i++) {
-      dist += haversineDistance(
-        points[i - 1].lat, points[i - 1].lng,
-        points[i].lat, points[i].lng
-      );
-    }
-    return dist;
-  }
+  }, [vehicleType, onAddActivity, checkGeofences]);
 
   useEffect(() => {
-    if (enabled) {
-      startTracking();
-    } else {
-      stopTracking();
-    }
+    if (enabled) startTracking();
+    else stopTracking();
     return () => stopTracking();
   }, [enabled, startTracking, stopTracking]);
 
   const handleToggle = () => {
     if (enabled) {
-      // Final log of remaining distance
       const remaining = totalDistance - lastLoggedDistRef.current;
       if (remaining >= 0.1) {
         const roundedDist = Math.round(remaining * 10) / 10;
         try {
-          const activity = ActivityFactory.create({
-            type: 'transport',
-            distance: roundedDist,
-            vehicleType,
-          });
+          const activity = ActivityFactory.create({ type: 'transport', distance: roundedDist, vehicleType });
           onAddActivity(activity);
           toast.success(`📍 Final segment logged: ${roundedDist} km`);
         } catch { /* skip */ }
@@ -184,6 +220,9 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
     if (!enabled) {
       setEvents([]);
       setTotalDistance(0);
+      setBreadcrumbs([]);
+      setGpsAccuracy(null);
+      setInsideGeofence(null);
     }
   };
 
@@ -216,10 +255,10 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
             </div>
             <div>
               <h3 className="text-lg font-display font-semibold text-foreground">
-                Live GPS Tracker
+                Live GPS Engine
               </h3>
               <p className="text-sm text-muted-foreground">
-                Real-time location tracking with Haversine distance
+                Real-time Haversine tracking with geofencing
               </p>
             </div>
           </div>
@@ -232,7 +271,6 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
           </button>
         </div>
 
-        {/* Vehicle selector */}
         {!enabled && (
           <div className="mb-4">
             <p className="text-xs text-muted-foreground mb-2">Select vehicle before starting:</p>
@@ -256,9 +294,23 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
 
         {enabled && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-primary">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              GPS Active — Tracking movement...
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-primary">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                GPS Active
+              </div>
+              {gpsAccuracy !== null && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Signal className="w-3 h-3" />
+                  ±{Math.round(gpsAccuracy)}m accuracy
+                </div>
+              )}
+              {insideGeofence && (
+                <div className="flex items-center gap-1 text-xs text-primary">
+                  <Satellite className="w-3 h-3" />
+                  Inside: {insideGeofence}
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-secondary/50 p-3">
@@ -282,10 +334,17 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
         {!enabled && !events.length && (
           <p className="text-sm text-muted-foreground">
             Enable to track your real-time location via GPS. Distance is calculated using the Haversine formula.
-            Activities auto-log every 500m of movement.
+            Geofences auto-detect campus arrival. Activities auto-log every 500m.
           </p>
         )}
       </motion.div>
+
+      {/* Live Map */}
+      {enabled && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <GPSMap points={breadcrumbs} currentCoords={currentCoords} />
+        </motion.div>
+      )}
 
       {/* Event Feed */}
       <AnimatePresence>
@@ -307,6 +366,7 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
+                  layout
                   className="flex items-start gap-3 p-3 rounded-xl bg-secondary/50"
                 >
                   <span className="text-2xl">📍</span>
@@ -322,8 +382,8 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Zap className="w-3 h-3 text-eco-leaf" />
-                    <span className="text-xs text-eco-leaf">GPS-logged</span>
+                    <Zap className="w-3 h-3 text-primary" />
+                    <span className="text-xs text-primary">GPS-verified</span>
                   </div>
                 </motion.div>
               ))}
