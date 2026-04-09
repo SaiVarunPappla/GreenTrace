@@ -28,7 +28,7 @@ import DepartmentChallenge from '@/components/DepartmentChallenge';
 import PrivacyToggle from '@/components/PrivacyToggle';
 import OrganizationView from '@/components/OrganizationView';
 import LiveActivityFeed from '@/components/LiveActivityFeed';
-import CentenaryBadge from '@/components/CentenaryBadge';
+import AuditTrail from '@/components/AuditTrail';
 
 const Index = () => {
   const { user: authUser, loading: authLoading } = useAuth();
@@ -293,7 +293,7 @@ const Index = () => {
 
       <footer className="border-t border-border py-8 mt-16 relative z-10 mb-10">
         <div className="container mx-auto px-4 text-center space-y-3">
-          <CentenaryBadge />
+          <AuditTrail />
           <p className="text-sm text-muted-foreground">🌍 GreenTrace India • Enterprise ESG & Carbon Intelligence</p>
           <p className="text-xs text-primary font-medium">🇮🇳 Designed for the Green India Initiative</p>
         </div>
