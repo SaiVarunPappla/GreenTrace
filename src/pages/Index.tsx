@@ -153,7 +153,7 @@ const Index = () => {
               <h2 className="text-3xl font-display font-bold text-foreground mb-2">
                 <span className="eco-gradient-text">Invisible Logger</span>
               </h2>
-              <p className="text-muted-foreground">Automated commute & activity detection simulation</p>
+              <p className="text-muted-foreground">Live GPS tracking with real-time distance calculation</p>
             </div>
             <AutoTracker onAddActivity={addActivity} />
           </motion.div>
@@ -204,7 +204,7 @@ const Index = () => {
               <h2 className="text-3xl font-display font-bold text-foreground mb-2">
                 <span className="eco-gradient-text">Smart Grid Monitor</span>
               </h2>
-              <p className="text-muted-foreground">Real-time India grid carbon intensity simulation</p>
+              <p className="text-muted-foreground">Real-time India grid carbon intensity & tariff data</p>
             </div>
             <SmartMeter />
           </motion.div>
