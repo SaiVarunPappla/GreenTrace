@@ -206,6 +206,51 @@ export type Database = {
         }
         Relationships: []
       }
+      tracking_sessions: {
+        Row: {
+          breadcrumbs: Json
+          carbon_used: number
+          created_at: string
+          distance_traveled: number
+          ended_at: string | null
+          id: string
+          last_lat: number | null
+          last_lng: number | null
+          started_at: string
+          status: string
+          user_id: string
+          vehicle_type: string
+        }
+        Insert: {
+          breadcrumbs?: Json
+          carbon_used?: number
+          created_at?: string
+          distance_traveled?: number
+          ended_at?: string | null
+          id?: string
+          last_lat?: number | null
+          last_lng?: number | null
+          started_at?: string
+          status?: string
+          user_id: string
+          vehicle_type?: string
+        }
+        Update: {
+          breadcrumbs?: Json
+          carbon_used?: number
+          created_at?: string
+          distance_traveled?: number
+          ended_at?: string | null
+          id?: string
+          last_lat?: number | null
+          last_lng?: number | null
+          started_at?: string
+          status?: string
+          user_id?: string
+          vehicle_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
