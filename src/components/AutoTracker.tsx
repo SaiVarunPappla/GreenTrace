@@ -67,8 +67,7 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
   const [highIntensityAlert, setHighIntensityAlert] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'acquiring' | 'active' | 'lost'>('idle');
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [currentLocationName, setCurrentLocationName] = useState<string | null>(null);
-  const { reverseGeocode } = useReverseGeocode();
+  const { location: currentLocation, reverseGeocode } = useReverseGeocode();
 
   const pointsRef = useRef<TrackedPoint[]>([]);
   const watchIdRef = useRef<number | null>(null);
