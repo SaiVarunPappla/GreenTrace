@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Clock, Zap, Navigation, Signal, AlertTriangle, Train, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 import GPSMap from '@/components/GPSMap';
+import { useReverseGeocode } from '@/hooks/useReverseGeocode';
 
 interface AutoTrackerProps {
   onAddActivity: (activity: Activity) => void;
@@ -66,6 +67,8 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
   const [highIntensityAlert, setHighIntensityAlert] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'acquiring' | 'active' | 'lost'>('idle');
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [currentLocationName, setCurrentLocationName] = useState<string | null>(null);
+  const { reverseGeocode } = useReverseGeocode();
 
   const pointsRef = useRef<TrackedPoint[]>([]);
   const watchIdRef = useRef<number | null>(null);
