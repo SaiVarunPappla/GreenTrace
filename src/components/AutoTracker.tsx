@@ -603,12 +603,16 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
                 </p>
               </div>
               <div className="rounded-xl bg-secondary/50 p-3">
-                <p className="text-xs text-muted-foreground">Position</p>
-                <p className="text-sm font-mono text-foreground">
-                  {currentCoords
-                    ? `${currentCoords.lat.toFixed(4)}°N, ${currentCoords.lng.toFixed(4)}°E`
-                    : 'Acquiring…'}
-                </p>
+                <p className="text-xs text-muted-foreground">Location</p>
+                {currentLocation?.display ? (
+                  <p className="text-sm text-foreground truncate">{currentLocation.display}</p>
+                ) : (
+                  <p className="text-sm font-mono text-foreground">
+                    {currentCoords
+                      ? `${currentCoords.lat.toFixed(4)}°N, ${currentCoords.lng.toFixed(4)}°E`
+                      : 'Acquiring…'}
+                  </p>
+                )}
               </div>
             </div>
           </motion.div>
