@@ -1,6 +1,7 @@
 import { Leaf, Menu, User, LogOut, LayoutDashboard, IndianRupee, Radio, Trophy, Brain, ShoppingBag, TreePine, FileText, Zap, QrCode, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import SystemStatusBar from '@/components/SystemStatusBar';
 
 interface HeaderProps {
   activeTab: string;
@@ -37,7 +38,11 @@ const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
       }}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        {/* System Status Ticker */}
+        <div className="border-b border-border/50 py-1 -mx-4 px-4">
+          <SystemStatusBar />
+        </div>
+        <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
