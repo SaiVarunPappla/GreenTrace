@@ -11,6 +11,7 @@ import {
   UtilityType,
 } from '@/lib/carbonCalculator';
 import { toast } from 'sonner';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 function dbRowToActivity(row: any): Activity | null {
   try {
@@ -72,6 +73,9 @@ export function useActivities() {
   }, [user]);
 
   useEffect(() => { fetchActivities(); }, [fetchActivities]);
+
+  // Realtime: auto-refresh when activities table changes
+  useRealtimeSubscription('activities', fetchActivities);
 
   const addActivity = async (activity: Activity) => {
     if (!user) return;
