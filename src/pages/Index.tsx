@@ -61,26 +61,26 @@ const Index = () => {
       <Confetti isActive={showConfetti} onComplete={() => setShowConfetti(false)} />
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      <main className="container mx-auto px-4 py-8 relative z-10">
+      <main className="container mx-auto px-3 py-5 relative z-10">
         {activeTab === 'dashboard' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
+            className="space-y-5"
           >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2">
-                Your <span className="eco-gradient-text">Green Dashboard</span>
-              </h2>
-              <p className="text-muted-foreground mb-3">
-                Track, reduce, and offset your carbon footprint
-              </p>
-
-              {/* View Mode Toggle */}
-              <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-secondary/50 border border-border">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-display font-bold text-foreground">
+                  <span className="eco-gradient-text">Green Dashboard</span>
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Real-time carbon intelligence • GPS-verified
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-1 p-0.5 rounded-lg bg-secondary/50 border border-border">
                 <button
                   onClick={() => setViewMode('my')}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
                     viewMode === 'my'
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:text-foreground'
@@ -90,13 +90,13 @@ const Index = () => {
                 </button>
                 <button
                   onClick={() => setViewMode('org')}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
                     viewMode === 'org'
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  Organization View
+                  Org View
                 </button>
               </div>
             </div>
@@ -104,17 +104,17 @@ const Index = () => {
             {viewMode === 'my' ? (
               <>
                 <StatsCards activities={activities} />
-                <div className="grid lg:grid-cols-3 gap-6">
+                <div className="grid lg:grid-cols-3 gap-4">
                   <div className="lg:col-span-1">
-                    <div className="eco-card flex items-center justify-center">
+                    <div className="eco-card flex items-center justify-center p-4">
                       <CarbonGauge value={totalEmissions} max={appUser.greenGoal} />
                     </div>
                   </div>
-                  <div className="lg:col-span-1 space-y-6">
+                  <div className="lg:col-span-1 space-y-4">
                     <ActivityLogger onAddActivity={addActivity} />
                     <EcoTip activities={activities} />
                   </div>
-                  <div className="lg:col-span-1 space-y-6">
+                  <div className="lg:col-span-1 space-y-4">
                     <EmissionsChart activities={activities} />
                     <CarbonHeatmap activities={activities} />
                   </div>
