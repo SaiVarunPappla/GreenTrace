@@ -128,174 +128,134 @@ const Index = () => {
         )}
 
         {activeTab === 'waste' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-4xl mx-auto"
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
+            <div className="mb-5">
+              <h2 className="text-2xl font-display font-bold text-foreground">
                 <span className="eco-gradient-text">Waste Realization</span>
               </h2>
-              <p className="text-muted-foreground">Your carbon inefficiency converted to Indian Rupees (₹)</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Carbon inefficiency in ₹ — based on actual GPS & utility logs</p>
             </div>
             <WasteRealization activities={activities} />
           </motion.div>
         )}
 
         {activeTab === 'autotrack' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto"
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto">
+            <div className="mb-5">
+              <h2 className="text-2xl font-display font-bold text-foreground">
                 <span className="eco-gradient-text">Invisible Logger</span>
               </h2>
-              <p className="text-muted-foreground">Live GPS tracking with real-time distance calculation</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Live GPS • Reverse geocoding • Cloud-synced every 10s</p>
             </div>
             <AutoTracker onAddActivity={addActivity} />
           </motion.div>
         )}
 
         {activeTab === 'leaderboard' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto"
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto">
+            <div className="mb-5">
+              <h2 className="text-2xl font-display font-bold text-foreground">
                 <span className="eco-gradient-text">Department Leaderboard</span>
               </h2>
-              <p className="text-muted-foreground">Compete for the highest Green Score</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Realtime Green Score rankings</p>
             </div>
             <DepartmentChallenge />
-            <div className="mt-6">
+            <div className="mt-4">
               <Leaderboard />
             </div>
           </motion.div>
         )}
 
         {activeTab === 'predictions' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto"
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
-                <span className="eco-gradient-text">AI Predictions</span>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto">
+            <div className="mb-5">
+              <h2 className="text-2xl font-display font-bold text-foreground">
+                <span className="eco-gradient-text">Predictive Analytics</span>
               </h2>
-              <p className="text-muted-foreground">AI-powered emission forecasting & waste analysis</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Linear regression on actual logs + AI deep analysis</p>
             </div>
             <PredictiveAI activities={activities} />
           </motion.div>
         )}
 
         {activeTab === 'smartmeter' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto"
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto">
+            <div className="mb-5">
+              <h2 className="text-2xl font-display font-bold text-foreground">
                 <span className="eco-gradient-text">Smart Grid Monitor</span>
               </h2>
-              <p className="text-muted-foreground">Real-time India grid carbon intensity & tariff data</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Real-time India grid intensity • CEA/POSOCO data</p>
             </div>
             <SmartMeter />
           </motion.div>
         )}
 
         {activeTab === 'qr' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-2xl mx-auto"
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
+            <div className="mb-5">
+              <h2 className="text-2xl font-display font-bold text-foreground">
                 <span className="eco-gradient-text">QR Check-in</span>
               </h2>
-              <p className="text-muted-foreground">Generate commute QR codes for instant trip logging</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Instant commute logging via scannable QR</p>
             </div>
             <CommuteQR />
           </motion.div>
         )}
 
         {activeTab === 'marketplace' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-4xl mx-auto"
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
+            <div className="mb-5">
+              <h2 className="text-2xl font-display font-bold text-foreground">
                 <span className="eco-gradient-text">Eco Marketplace</span>
               </h2>
-              <p className="text-muted-foreground">Sustainable products for a greener lifestyle</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Sustainable products for a greener lifestyle</p>
             </div>
             <Marketplace />
           </motion.div>
         )}
 
         {activeTab === 'offset' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-2xl mx-auto"
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
+            <div className="mb-5">
+              <h2 className="text-2xl font-display font-bold text-foreground">
                 <span className="eco-gradient-text">Carbon Offset</span>
               </h2>
-              <p className="text-muted-foreground">Neutralize your impact through verified projects</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Verified Indian offset projects</p>
             </div>
             <CarbonOffset totalEmissions={totalEmissions} />
           </motion.div>
         )}
 
         {activeTab === 'report' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-2xl mx-auto"
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
+            <div className="mb-5">
+              <h2 className="text-2xl font-display font-bold text-foreground">
                 <span className="eco-gradient-text">ESG Report</span>
               </h2>
-              <p className="text-muted-foreground">Generate professional sustainability reports for HR</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Audit-ready PDF with GPS-verified data & hash verification</p>
             </div>
             <ESGReport activities={activities} />
           </motion.div>
         )}
 
         {activeTab === 'settings' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-2xl mx-auto"
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-display font-bold text-foreground mb-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
+            <div className="mb-5">
+              <h2 className="text-2xl font-display font-bold text-foreground">
                 <span className="eco-gradient-text">Settings</span>
               </h2>
-              <p className="text-muted-foreground">Configure privacy and preferences</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Privacy & preferences</p>
             </div>
             <PrivacyToggle />
           </motion.div>
         )}
       </main>
 
-      <footer className="border-t border-border py-8 mt-16 relative z-10 mb-10">
-        <div className="container mx-auto px-4 text-center space-y-3">
+      <footer className="border-t border-border py-6 mt-12 relative z-10 mb-8">
+        <div className="container mx-auto px-4 text-center space-y-2">
           <AuditTrail />
-          <p className="text-sm text-muted-foreground">🌍 GreenTrace India • Enterprise ESG & Carbon Intelligence</p>
-          <p className="text-xs text-primary font-medium">🇮🇳 Designed for the Green India Initiative</p>
+          <p className="text-xs text-muted-foreground">GreenTrace India • Enterprise ESG & Carbon Intelligence Platform</p>
+          <p className="text-[10px] text-primary/70 font-medium">🇮🇳 100% Real-World Data • Zero Simulation • GPS-Verified</p>
         </div>
       </footer>
 
