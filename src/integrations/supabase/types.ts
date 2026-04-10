@@ -263,6 +263,7 @@ export type Database = {
           id: string
         }[]
       }
+      get_user_department_ids: { Args: { _user_id: string }; Returns: string[] }
     }
     Enums: {
       [_ in never]: never

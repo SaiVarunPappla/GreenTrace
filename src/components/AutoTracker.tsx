@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Clock, Zap, Navigation, Signal, AlertTriangle, Train, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 import GPSMap from '@/components/GPSMap';
+import { useReverseGeocode } from '@/hooks/useReverseGeocode';
 
 interface AutoTrackerProps {
   onAddActivity: (activity: Activity) => void;
@@ -66,6 +67,7 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
   const [highIntensityAlert, setHighIntensityAlert] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'acquiring' | 'active' | 'lost'>('idle');
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const { location: currentLocation, reverseGeocode } = useReverseGeocode();
 
   const pointsRef = useRef<TrackedPoint[]>([]);
   const watchIdRef = useRef<number | null>(null);
@@ -129,7 +131,7 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
   );
 
   // ============= Log Segment to DB =============
-  const logSegment = useCallback((distance: number) => {
+  const logSegment = useCallback(async (distance: number) => {
     if (distance < SEGMENT_LOG_THRESHOLD_KM) return;
     const roundedDist = Math.round(distance * 100) / 100;
     try {
@@ -145,20 +147,28 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
       setCarbonBudgetUsed(carbonUsedRef.current);
 
       const coords = lastCoordsRef.current;
+      
+      // Reverse geocode for real street name
+      let locationStr = coords ? `${coords.lat.toFixed(4)}°N, ${coords.lng.toFixed(4)}°E` : 'GPS';
+      if (coords) {
+        const geoResult = await reverseGeocode(coords.lat, coords.lng);
+        if (geoResult?.display) {
+          locationStr = geoResult.display;
+        }
+      }
+
       const event: TripEvent = {
         id: `gps-${Date.now()}`,
         label: `Live Segment (${vehicleType})`,
-        location: coords
-          ? `${coords.lat.toFixed(4)}°N, ${coords.lng.toFixed(4)}°E`
-          : 'GPS',
+        location: locationStr,
         distance: roundedDist,
         time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         coords: coords || { lat: 0, lng: 0 },
       };
       setEvents((prev) => [event, ...prev]);
-      toast.success(`📍 Auto-logged: ${roundedDist} km via ${vehicleType}`);
+      toast.success(`📍 ${locationStr} — ${roundedDist} km`);
     } catch { /* skip */ }
-  }, [vehicleType, onAddActivity]);
+  }, [vehicleType, onAddActivity, reverseGeocode]);
 
   // ============= Speed Alert =============
   const switchToGreenMode = useCallback((mode: 'metro' | 'shared') => {
@@ -249,6 +259,9 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
         lastCoordsRef.current = { lat: latitude, lng: longitude };
         setGpsAccuracy(accuracy);
         setGpsStatus('active');
+
+        // Reverse geocode periodically (throttled internally)
+        reverseGeocode(latitude, longitude);
 
         // Add breadcrumb
         breadcrumbsRef.current = [...breadcrumbsRef.current, { lat: latitude, lng: longitude }];
@@ -593,12 +606,16 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
                 </p>
               </div>
               <div className="rounded-xl bg-secondary/50 p-3">
-                <p className="text-xs text-muted-foreground">Position</p>
-                <p className="text-sm font-mono text-foreground">
-                  {currentCoords
-                    ? `${currentCoords.lat.toFixed(4)}°N, ${currentCoords.lng.toFixed(4)}°E`
-                    : 'Acquiring…'}
-                </p>
+                <p className="text-xs text-muted-foreground">Location</p>
+                {currentLocation?.display ? (
+                  <p className="text-sm text-foreground truncate">{currentLocation.display}</p>
+                ) : (
+                  <p className="text-sm font-mono text-foreground">
+                    {currentCoords
+                      ? `${currentCoords.lat.toFixed(4)}°N, ${currentCoords.lng.toFixed(4)}°E`
+                      : 'Acquiring…'}
+                  </p>
+                )}
               </div>
             </div>
           </motion.div>

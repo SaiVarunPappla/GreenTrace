@@ -83,11 +83,28 @@ const EmissionsChart = ({ activities }: EmissionsChartProps) => {
               borderRadius: '12px',
               color: 'hsl(120, 10%, 92%)',
               fontSize: '12px',
+              padding: '12px',
             }}
-            formatter={(value: number, name: string) => [
-              `${value.toFixed(2)} kg CO₂`,
-              name.charAt(0).toUpperCase() + name.slice(1),
-            ]}
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              return (
+                <div className="space-y-1">
+                  <p className="font-semibold text-foreground text-xs">{label}</p>
+                  {payload.map((entry: any, i: number) => (
+                    <div key={i} className="flex items-center gap-2 text-xs">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                      <span className="text-muted-foreground capitalize">{entry.name}</span>
+                      <span className="font-mono text-foreground">{Number(entry.value).toFixed(2)} kg</span>
+                    </div>
+                  ))}
+                  <div className="pt-1 border-t border-border mt-1">
+                    <span className="text-[9px] text-muted-foreground">
+                      Source: GPS-verified logs • Grid: 0.82 kg CO₂/kWh (CEA India)
+                    </span>
+                  </div>
+                </div>
+              );
+            }}
           />
           <Area
             type="monotone"
