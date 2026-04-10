@@ -260,6 +260,9 @@ const AutoTracker = ({ onAddActivity }: AutoTrackerProps) => {
         setGpsAccuracy(accuracy);
         setGpsStatus('active');
 
+        // Reverse geocode periodically (throttled internally)
+        reverseGeocode(latitude, longitude);
+
         // Add breadcrumb
         breadcrumbsRef.current = [...breadcrumbsRef.current, { lat: latitude, lng: longitude }];
         setBreadcrumbs([...breadcrumbsRef.current]);
