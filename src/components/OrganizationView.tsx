@@ -34,7 +34,7 @@ const OrganizationView = () => {
     try {
       const [activitiesRes, profilesRes, membersRes, deptsRes] = await Promise.all([
         supabase.from('activities').select('user_id, impact, category'),
-        supabase.from('profiles').select('id, display_name'),
+        supabase.rpc('get_public_profiles'),
         supabase.from('department_members').select('user_id, department_id'),
         supabase.from('departments').select('id, name'),
       ]);
