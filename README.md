@@ -1,157 +1,292 @@
+# GreenTrace India
+**Enterprise ESG & Carbon Intelligence Platform**
 
+[![Live Preview](https://img.shields.io/badge/Live-Preview-brightgreen)](https://greentrace.lovable.app)
+[![Tech Stack](https://img.shields.io/badge/Stack-React_18.3_%2B_TypeScript_%2B_Supabase-blue)](https://github.com/)
+[![Localization](https://img.shields.io/badge/Region-India_%28INR/CEA%29-orange)](https://github.com/)
 
----
-
-## 📖 Overview
-
-**GreenTrace** is a comprehensive, real-time carbon emissions tracking, management, and reduction platform. Built for both individuals and large enterprises, GreenTrace moves beyond generic calculators to provide **GPS-verified, real-world data** tracking for environmental impact. It empowers organizations to monitor emissions across departments, generate audit-ready ESG reports, and foster a culture of sustainability through gamification and AI-driven insights.
-
----
-
-## 🌟 Core Features
-
-### 🏢 Enterprise & Organizational Intelligence
-- **Organization View**: Analyze aggregated emissions data across your entire organization. Switch seamlessly between "My View" and "Org View".
-- **Department Challenges & Leaderboards**: Foster friendly competition between departments with real-time Green Score rankings to drive sustainable habits.
-- **Audit-Ready ESG Reporting**: Generate comprehensive Environmental, Social, and Governance (ESG) PDF reports with GPS-verified data and hash verification for compliance and stakeholder sharing.
-- **Waste Realization**: Track carbon inefficiency in actual currency (₹) based on GPS and utility logs.
-- **Smart Grid Monitor**: Real-time integration with Indian grid intensity data (CEA/POSOCO) to monitor the true cost of electricity consumption.
-- **Audit Trail & Privacy**: Built-in data integrity checks with a live activity feed and robust privacy toggles.
-
-### 👤 Individual Tracking & Engagement
-- **Green Dashboard**: A personalized hub showing your carbon gauge, stats cards, and recent activities.
-- **Invisible Logger (AutoTracker)**: Frictionless tracking using live GPS and reverse geocoding, cloud-synced every 10 seconds.
-- **QR Check-in**: Instant commute logging via scannable QR codes for office or site check-ins.
-- **Activity Logger**: Manually log specific activities, commutes, and energy consumption with precise impact calculations.
-- **Eco Marketplace**: Discover and shop sustainable products for a greener lifestyle.
-- **Carbon Offsets**: Invest in verified carbon offset projects directly from the platform to neutralize your footprint.
-
-### 🤖 AI & Advanced Analytics
-- **Predictive Analytics**: Utilizes linear regression on actual logs combined with AI deep analysis to forecast future carbon emissions.
-- **Carbon Heatmap & Emissions Chart**: Visualize emission patterns over time to identify high-impact areas and trends.
+## Table of Contents
+1. [Overview](#overview)
+2. [Live Demo & Screenshots](#live-demo--screenshots)
+3. [Core Features](#core-features)
+4. [Tech Stack](#tech-stack)
+5. [Architecture](#architecture)
+6. [Project Structure](#project-structure)
+7. [Database Schema](#database-schema)
+8. [The GPS Engine (AutoTracker)](#the-gps-engine-autotracker)
+9. [Carbon Calculator & Emission Factors](#carbon-calculator--emission-factors)
+10. [Predictive Analytics](#predictive-analytics)
+11. [ESG Reporting & Verification](#esg-reporting--verification)
+12. [Design System](#design-system)
+13. [Getting Started](#getting-started)
+14. [Available Scripts](#available-scripts)
+15. [Deployment](#deployment)
+16. [Security & Privacy](#security--privacy)
+17. [Localization for India](#localization-for-india)
+18. [Roadmap & Future Work](#roadmap--future-work)
+19. [Contributing](#contributing)
+20. [Acknowledgements](#acknowledgements)
 
 ---
 
-## 🛠 Tech Stack
+## Overview
 
-GreenTrace is built on a modern, highly scalable, and performant tech stack:
+GreenTrace India is a 100% real-world-data, GPS-verified carbon emissions tracking and reduction platform built specifically for Indian individuals and enterprises. 
+
+**The Zero-Mock Policy**
+GreenTrace strictly adheres to a "Zero-Mock" data principle. Every metric on the screen comes from a real signal. When live signals or data are unavailable, the UI explicitly shows waiting states rather than fabricating data:
+* **AutoTracker:** "Acquiring satellite signal..." / "Searching for satellites..."
+* **SmartMeter:** "Waiting for Real-World Data — Connecting to Indian Power Grid data stream..."
+* **PredictiveAI:** "Awaiting Real-World Data — Log at least 3 activities to unlock regression analysis"
+* **CarbonHeatmap:** "Heatmap appears after logging activities"
+* **EmissionsChart:** "Chart will appear once you log activities"
+* **AuditTrail:** "Waiting for database writes..."
+* **ActivityList:** "No activities logged yet. Start tracking your carbon footprint!"
+
+---
+
+## Live Demo & Screenshots
+
+* **Live App:** [https://greentrace.lovable.app](https://greentrace.lovable.app)
+* **Preview Environment:** [Lovable Preview Link](https://id-preview--3e9e92fa-efb4-4ece-997a-4c417e9d30f9.lovable.app)
+
+*(Screenshot placeholders)*
+* `[Dashboard View]`
+* `[AutoTracker Live GPS]`
+* `[Organization Analytics]`
+
+---
+
+## Core Features
+
+### Enterprise & Org Intelligence
+* **Organization View:** Campus footprint, active employees, avg per employee, and department-by-department INR waste bars. Includes "Greenest Employee of the Month".
+* **Department Challenges:** Inter-department competitions (e.g., no-car goals).
+* **Leaderboard:** Realtime department Green Scores calculated as `(1000 - (avgEmissions * 10))`.
+* **ESG PDF:** Audit-ready 2-page report generation.
+* **Smart Grid:** Live monitor showing India grid intensity.
+* **Audit Trail:** Footer ticker displaying encrypted and verified database writes.
+* **Privacy Mode:** GDPR-style anonymization switch.
+
+### Individual Tracking
+* **Dashboard:** 11-tab interface with StatsCards, animated CarbonGauge vs a daily 8.0 kg CO2 budget, and EcoTips.
+* **AutoTracker:** Live 693-line GPS engine for automated commute logging.
+* **QR Check-in:** Generate and scan simulated QR codes for instant trip logging.
+* **Activity Logger:** Manual tracking with Transport, Diet, and Utility tabs.
+* **Marketplace & Offsets:** Hardcoded sustainable products and local Indian offset projects with a budget slider (INR 100 - 10,000) and Certificate PDF generation.
+
+### AI & Analytics
+* **Linear Regression:** Local OLS regression detecting anomalies and projecting emissions.
+* **AI Deep Analysis:** Edge function integrated with Gemini-3 generating tailored roadmaps.
+* **Carbon Heatmap:** 7x4 day/time-slot hotspot grid.
+* **Emissions Chart:** Stacked area charts mapping transport, diet, and utility trends via Recharts.
+
+---
+
+## Tech Stack
 
 ### Frontend
-- **Framework**: [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
-- **Build Tool**: [Vite](https://vitejs.dev/) for blazing-fast development and optimized builds.
-- **Routing**: [React Router v6](https://reactrouter.com/)
-- **State Management**: [TanStack React Query v5](https://tanstack.com/query/latest) for robust server-state management and caching.
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) with [shadcn/ui](https://ui.shadcn.com/) for beautiful, accessible, and customizable components.
-- **Animations**: [Framer Motion](https://www.framer.com/motion/) for smooth, fluid UI transitions.
-- **Mapping**: [Leaflet](https://leafletjs.com/) & [React Leaflet](https://react-leaflet.js.org/) for GPS and heatmap visualizations.
-- **Charting**: [Recharts](https://recharts.org/) for responsive, declarative data charts.
+| Technology | Description |
+| :--- | :--- |
+| **React 18.3.1** | Core UI framework with TypeScript 5.8.3 |
+| **Vite 5.4.19** | Build tool with `@vitejs/plugin-react-swc` |
+| **Routing & State** | React Router DOM 6.30.1, TanStack React Query 5.83.0 |
+| **Styling** | Tailwind CSS 3.4.17, shadcn/ui, next-themes 0.3.0 |
+| **Animation** | Framer Motion 12.35.2 |
+| **Visualization** | Recharts 2.15.4, Leaflet 1.9.4 / React-Leaflet 5.0.0 |
+| **Utilities** | jsPDF 4.2.0, qrcode.react 4.2.0, date-fns 3.6.0, react-hook-form 7.61.1, zod 3.25.76, sonner 1.7.4 |
 
-### Backend & Database (BaaS)
-- **Platform**: [Supabase](https://supabase.com/)
-- **Database**: PostgreSQL
-- **Authentication**: Supabase Auth (Email/Password, OAuth)
-- **Realtime**: Supabase Realtime for live activity feeds and instant updates.
-- **Edge Functions**: Used for complex calculations and integrations.
+### Backend & Tooling
+| Layer | Technology |
+| :--- | :--- |
+| **BaaS** | Lovable Cloud (managed Supabase @2.95.3), PostgreSQL, Auth, Realtime |
+| **Edge Functions** | Deno-based (predict-emissions) |
+| **AI Gateway** | Lovable AI Gateway (`google/gemini-3-flash-preview`) |
+| **External API** | OpenStreetMap Nominatim (Throttled 1 req / 2s) |
+| **Tooling** | ESLint 9, Vitest 3.2.4, Bun / npm, lovable-tagger 1.1.13 |
 
 ---
 
-## 📁 Project Structure
+## Architecture
+
+```mermaid
+graph TD
+    A[React Frontend] -->|Supabase Client| B(PostgreSQL Database)
+    A -->|Auth & Realtime| B
+    A -->|Edge Call| C(Deno Edge Function: predict-emissions)
+    C -->|Tool-calling| D[Lovable AI Gateway: Gemini-3-Flash]
+    A -->|Throttled Geocoding| E[Nominatim API]
+    A -->|Browser API| F[Geolocation API / watchPosition]
+```
+---
+
+## Project Structure
 
 ```text
 GreenTrace/
-├── public/                 # Static assets
+├── public/                          # Static assets (robots.txt)
 ├── src/
-│   ├── components/         # Reusable UI components & Feature modules
-│   │   ├── ui/             # shadcn/ui base components
-│   │   ├── AutoTracker.tsx # Invisible GPS logger
-│   │   ├── ESGReport.tsx   # PDF generation logic
-│   │   ├── PredictiveAI.tsx# AI & Linear regression views
-│   │   └── ...
-│   ├── contexts/           # React Context providers (e.g., AuthContext)
-│   ├── hooks/              # Custom React hooks (e.g., useActivities)
-│   ├── integrations/       # Third-party integrations (Supabase client)
-│   ├── lib/                # Utility functions, helpers, carbon calculators
-│   ├── pages/              # Main route components (Index, Auth, NotFound)
-│   ├── App.tsx             # Root component & Route definitions
-│   └── main.tsx            # Application entry point
-├── supabase/               # Supabase configuration, migrations, and edge functions
-├── .env                    # Environment variables (not committed)
-├── package.json            # Dependencies and scripts
-├── tailwind.config.ts      # Tailwind CSS configuration
-└── vite.config.ts          # Vite bundler configuration
+│   ├── components/                  # 26 feature components + shadcn/ui suite
+│   │   ├── AutoTracker.tsx          # 693-line live GPS engine
+│   │   ├── ESGReport.tsx            # 2-page PDF generator
+│   │   ├── PredictiveAI.tsx         # Linear regression + AI deep analysis
+│   │   ├── ui/                      # ~50 base shadcn components
+│   │   └── ...                      
+│   ├── contexts/AuthContext.tsx     # Supabase auth + profile fetching
+│   ├── hooks/                       # useActivities, useReverseGeocode
+│   ├── integrations/                # Supabase auto-generated types
+│   ├── lib/
+│   │   ├── carbonCalculator.ts      # 508-line OOP engine
+│   │   ├── linearRegression.ts      # OLS regression + anomalies
+│   │   └── utils.ts                 
+│   ├── pages/                       # Auth, Index, NotFound
+│   ├── test/                        # Vitest setup
+│   └── index.css                    # Eco-Dark Theme tokens
+├── supabase/
+│   ├── functions/predict-emissions/ # Deno edge function
+│   └── migrations/                  # 11 SQL migrations
+├── .env                             # Environment variables
+└── package.json                     # Bun/npm configuration
 ```
+---
+
+## Database Schema
+
+The database relies on PostgreSQL via Supabase with strictly enforced Row-Level Security (RLS) across 11 migrations.
+
+*   **profiles**: One row per user. Stores `display_name`, `employee_id`, `department`, and a `green_goal` (default 100 kg CO₂).
+*   **activities**: Every logged carbon event (transport, diet, utility). Features owner-only CRUD RLS and Realtime broadcasting.
+*   **tracking_sessions**: Live GPS sessions. Stores `status` (active/completed), `distance_traveled`, and a `breadcrumbs` JSONB array (capped at 500 points).
+*   **departments**: Organizational groups for campus-wide footprint tracking.
+*   **department_members**: User-to-department mapping. Uses a `SECURITY DEFINER` function to prevent RLS recursion and org-wide member enumeration.
+*   **department_challenges**: Inter-department competitions with specific goal types (e.g., 'no-car').
 
 ---
 
-## 🚀 Getting Started
+## The GPS Engine (AutoTracker)
 
-Follow these instructions to set up the project locally for development and testing.
+The `AutoTracker.tsx` is a high-precision, 693-line engine that avoids simulation in favor of real hardware signals.
+
+*   **Precision Filtering**: Discards GPS drift noise less than 2 meters (`NOISE_THRESHOLD_KM = 0.002`).
+*   **Geofencing**: Automatically detects entry/exit for the VNRVJIET Campus (17.4435, 78.3772) and Home Zones.
+*   **Cloud Sync**: Persists state to the database every 10 seconds or immediately when the tab is hidden.
+*   **Speed Detection**: Triggers "High Intensity" alerts if speeds exceed 20 km/h, suggesting a switch to 'metro' or 'shared' modes.
+*   **Auto-Logging**: Automatically creates a `TransportActivity` segment every 50 meters.
+
+---
+
+## Carbon Calculator & Emission Factors
+
+The OOP-based engine in `src/lib/carbonCalculator.ts` uses industrial-grade patterns to ensure consistent calculations.
+
+### Key Emission Factors (kg CO₂)
+| Category | Type | Factor | Unit |
+| :--- | :--- | :--- | :--- |
+| **Grid** | Electricity (India) | 0.82 | per kWh |
+| **Transport** | Petrol / Diesel | 0.21 / 0.27 | per km |
+| **Transport** | Auto-rickshaw | 0.10 | per km |
+| **Transport** | Two-wheeler | 0.08 | per km |
+| **Transport** | Metro | 0.03 | per km |
+| **Diet** | Vegetarian / Vegan | 0.86 / 0.43 | per serving |
+| **Diet** | Beef / Mutton | 6.61 / 5.50 | per serving |
+
+### Financial Translation (Waste in INR)
+*   **Transport Waste**: kg CO₂ × ₹12
+*   **Electricity Waste**: kg CO₂ × ₹9.76 (calculated at ₹8/kWh × 0.82 grid factor)
+*   **Diet Waste**: kg CO₂ × ₹5
+
+---
+
+## Predictive Analytics
+
+**Local Regression (`src/lib/linearRegression.ts`)**
+Executes pure-TypeScript Ordinary Least Squares (OLS) regression on daily emission totals. Provides slope, intercept, R2, and a residual-based Z-score anomaly detection system flagging any `|Z| > 2` as a significant spike or drop.
+
+**AI Deep Analysis (`predict-emissions`)**
+A Deno-based edge function routing through the Lovable AI Gateway to `google/gemini-3-flash-preview`. It generates tailored roadmaps and risk levels (Low/Medium/High) based on Indian fuel and grid baselines.
+
+---
+
+## ESG Reporting & Verification
+
+The `ESGReport.tsx` module generates audit-ready, 2-page PDFs entirely client-side using `jsPDF`.
+
+*   **Executive Summary**: Displays total emissions, activity counts, and financial waste in INR.
+*   **Strategic Roadmap**: Provides a C-Suite summary with a Risk Level computed against an annual 2,000 kg CO₂ budget.
+*   **Digital Verification**: Includes a unique `Report ID: GT-{base36 timestamp}` and a visual QR-style placeholder.
+
+---
+
+## Design System
+
+**Theme**: "Eco-Dark / Deep Forest" using HSL tokens.
+*   **Core Colors**: Background `160 30% 5%`, Primary `140 35% 50%` (Sage Green).
+*   **Typography**: 'Inter' for body text and 'Space Grotesk' for display headings.
+*   **Visuals**: Includes a reactive `AuroraBackground` that shifts colors as emissions rise and a monospace `SystemStatusBar` for live grid/GPS telemetry.
+
+---
+
+## Getting Started
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (v18 or higher recommended)
-- npm or [Bun](https://bun.sh/) (Bun lockfile is present in the repo)
-- A [Supabase](https://supabase.com/) account for backend services.
+*   Node.js ≥ 18 (or Bun ≥ 1.0)
+*   Modern browser with Geolocation API support
+*   HTTPS or localhost (required for `watchPosition`)
 
-### 1. Clone the Repository
-```bash
-git clone <repository-url>
-cd GreenTrace-main
-```
-
-### 2. Install Dependencies
-```bash
-npm install
-# or if using bun:
-# bun install
-```
-
-### 3. Environment Configuration
-Create a `.env` file in the root of your project. You will need to extract your Supabase URL and Anon Key from your Supabase project dashboard.
-
-```env
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-super-secret-anon-key
-```
-
-### 4. Database Setup (Supabase)
-GreenTrace relies on specific PostgreSQL tables to function. Ensure your Supabase database has the following core tables set up:
-- `profiles`: User profiles and green goals.
-- `activities`: Logged carbon activities, including impact, category, and user references.
-- `departments`: Organizational departments.
-- `department_members`: Mapping of users to departments.
-*(Note: Run your Supabase migrations or execute the provided SQL schemas if available in the `/supabase` directory).*
-
-### 5. Run the Development Server
-```bash
-npm run dev
-# or
-# bun run dev
-```
-Navigate to `http://localhost:8080` (or the port specified in your terminal) to view the application.
+### Installation
+1.  Clone the repository.
+2.  Install dependencies: `npm install`
+3.  Configure your `.env` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+4.  Push the database schema: `supabase db push`
 
 ---
 
-## 📜 Available Scripts
+## Available Scripts
 
 | Command | Description |
-|---|---|
-| `npm run dev` | Starts the local Vite development server with Hot Module Replacement (HMR). |
-| `npm run build` | Compiles the TypeScript code and builds the production bundle via Vite. |
-| `npm run preview` | Starts a local web server that serves the built production bundle for testing. |
-| `npm run lint` | Runs ESLint to identify and report on patterns found in ECMAScript/JavaScript code. |
-| `npm run test` | Runs the Vitest testing suite. |
-| `npm run test:watch` | Runs Vitest in watch mode for active development. |
+| :--- | :--- |
+| `npm run dev` | Starts Vite dev server with HMR |
+| `npm run build` | Generates production build |
+| `npm run test` | Executes Vitest suite |
+| `npm run lint` | Runs ESLint over the project |
 
 ---
 
-## 🤝 Editing & Contributing
+## Security & Privacy
 
-If you want to work locally using your own IDE, simply pull the latest changes, create a new branch for your feature, and submit a pull request once complete. 
-
-Changes made via the [Lovable](https://lovable.dev/) visual editor will be committed automatically to this repository and synchronized with your local environment when you pull.
+*   **Hardened RLS**: All database tables enforce `auth.uid() = user_id`.
+*   **Data Minimization**: Public profile data is exposed only through a strictly limited RPC (`get_public_profiles`).
+*   **Input Validation**: `ValidationError` range checks in the calculator prevent DoS via extreme inputs.
+*   **Privacy Mode**: A dedicated GDPR-style toggle allows users to anonymize their data.
 
 ---
 
-<div align="center">
-  <p>Built for a greener tomorrow. 🌍</p>
-</div>
+## Localization for India
+
+*   **Currency**: All financial data rendered in ₹ via `en-IN` locale.
+*   **Grid Intensity**: 0.82 kg CO₂/kWh baseline (referencing CEA/POSOCO).
+*   **Transport**: Native support for Auto-rickshaws and Two-wheelers.
+*   **Offsets**: Features local projects like Trees in Western Ghats and Mangroves in Sundarbans.
+
+---
+
+## Roadmap & Future Work
+
+*   **Native Mobile**: Background GPS tracking via React Native or Capacitor.
+*   **PWA**: Offline-first capabilities and service worker support.
+*   **Cryptography**: Implementing true SHA-256 hashing for ESG PDF verification.
+*   **Live Grid**: Real-time integration with live CEA/POSOCO APIs.
+*   **Role-Based Access**: Deployment of the `user_roles` RBAC system.
+
+---
+
+## Acknowledgements
+
+*   **Infrastructure**: Lovable Cloud & Supabase
+*   **AI**: Lovable AI Gateway (Gemini 3 Flash)
+*   **Data**: Central Electricity Authority (CEA) India
+*   **UI**: shadcn/ui & Framer Motion
+
+---
+
+*Built for a greener tomorrow.*
